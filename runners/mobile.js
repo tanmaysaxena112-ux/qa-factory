@@ -384,7 +384,7 @@ export async function runMobileTests({ repoRoot, project, envName, tests, schema
         const began = Date.now();
         try {
           const observed = await runStep(session, step, ctx);
-          steps.push({ n: i + 1, action: step.action, target: step.target, ...(step.target ? { locator: targetXPath(step.target) } : {}), ok: true, ...(observed && typeof observed === 'object' ? { observed } : {}), ms: Date.now() - began });
+          steps.push({ n: i + 1, action: step.action, target: step.target, ...(step.value !== undefined ? { value: step.value } : {}), ...(step.target ? { locator: targetXPath(step.target) } : {}), ok: true, ...(observed && typeof observed === 'object' ? { observed } : {}), ms: Date.now() - began });
         } catch (e) {
           failure = e.message;
           steps.push({ n: i + 1, action: step.action, target: step.target, ...(step.target ? { locator: targetXPath(step.target) } : {}), ok: false, error: e.message, ms: Date.now() - began });

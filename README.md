@@ -17,7 +17,7 @@ PRD → critique → test cases → edge case hunt → automation → calibratio
 |---|---|---|
 | Engine | Runs workflow steps in order, holds gates, records everything | No. Plain code reading a validated workflow file. |
 | Agents | Write PRDs, test cases, triage failures, review evidence | Contained: restricted Claude Code, no shell, only named MCP servers, confined to one folder |
-| Runners | Own API runner (Node `fetch` plus OpenAPI contract checks), Playwright, WebdriverIO 9 + Appium 3 | Allowlisted commands only, no shell, same command gives the same result |
+| Runners | Own API runner (Node `fetch` plus OpenAPI contract checks), Playwright 1.63, own WebDriver client with Appium 3 on Android | Allowlisted commands only, no shell, same command gives the same result |
 | Evidence | Every output of every run | Redacted, written once, hashed and sealed; tampering is detected |
 | QA Lead | Approves gates, merges, releases | The only one who can. Agents are refused by the engine and by hooks. |
 
@@ -44,7 +44,7 @@ npm run qa -- evidence verify RUN-YYYY-MMDD-001
 
 ## Status
 
-Phases 0, 1 and 2 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
+Phases 0 to 3 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
 
 | Stage | What happened |
 |---|---|
@@ -68,7 +68,17 @@ Phase 2, the web lane, then ran the same pipeline on the shopping page:
 
 Every step's evidence is sealed per run. Decisions made during development are recorded as made by Claude on behalf of the QA Lead, never as the QA Lead.
 
-Next: the mobile lane (WebdriverIO 9 and Appium 3).
+Phase 3, the mobile lane, ran the pipeline in real Chrome on an Android 15 emulator through Appium 3:
+
+| Stage | What happened |
+|---|---|
+| PRD | Written with the web PRD as context, citing its criteria by ID; 7 critique issues resolved |
+| Test design | First attempt rejected: the agents were not given the PRD it cites. Rework produced 39 cases plus 4 edge cases |
+| Automation and calibration | Calibration failed closed; the healthy build had touch targets of 64x35 and 178x33 CSS px, below the 48x48 minimum |
+| Regression | 4 findings, blind reviewer rejected; the fix passed 40/40 and the web visual check caught the layout change it caused |
+| Certification | Mobile 40/40 with 4/4 faults, web 49/49 with 5/5, API 37/37 with 7/7 |
+
+Next: the always-on layer (scheduled regression, flake tracking, escape analysis, performance and security scans).
 
 ## Documentation
 

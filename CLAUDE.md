@@ -51,12 +51,13 @@ Rules that code can enforce live in code: hooks in `.claude/hooks/`, validators 
 ```bash
 npm test                                   # full test suite
 npm run qa -- doctor                       # health check; must pass before any run
-npm run qa -- run <workflow> --param k=v   # prd, design-cases, automate, automate-web, api-regression, web-regression, calibrate
+npm run qa -- run <workflow> --param k=v   # prd, design-cases, automate(-web|-mobile), api/web/mobile-regression, calibrate
 npm run qa -- approve <run>                # QA Lead decision
 npm run qa -- prd validate --project <p>   # PRD standard
 npm run qa -- cases validate --project <p> # oracles and coverage
 npm run qa -- api validate --project <p>   # every API test implements an approved case
 npm run qa -- web validate --project <p>   # every web test implements an approved case
+npm run qa -- mobile validate --project <p> # every mobile test implements an approved case
 ```
 
 Full reference: `docs/engine.md`.

@@ -57,3 +57,19 @@ Each decision states the context, the choice and what it costs. Newest last.
 **Decision.** The runner counts every project's entry, requires every requested browser to report, and refuses to produce results unless its failed-run count equals Playwright's own `stats.unexpected`. A regression test runs a test that passes in Chromium and fails in WebKit and requires FAIL. Browser exceptions exist only as declared `skip_browsers` entries with a reason from the PRD, recorded in evidence. The affected calibration was superseded by RUN-2026-0925-016.
 
 **Cost.** None beyond the fix. This is the case the blind reviewer exists for: a self-graded pipeline would have released on a false 47/47.
+
+## D-008: Mobile lane on real Android Chrome without WebdriverIO
+
+**Context.** WebdriverIO 9.32 adds six high-severity advisories through `extract-zip` (path traversal), with only the out-of-support v8 offered as a fix. Appium is a W3C WebDriver server, and the mobile format needs about fifteen commands.
+
+**Decision.** A small WebDriver client on `fetch` drives Appium 3.8.0 with the UiAutomator2 8.7.0 driver. The runner uses an attached device, or boots the emulator named in `QA_ANDROID_AVD` read-only so the device image never changes, and starts a private Appium server on localhost. Mobile tests are interpreted step by step with waiting assertions and record every observed value, locator and a screenshot. The keyboard is dismissed after typing, as a person does, and rotation is retried as a device command, never as a test retry.
+
+**Cost.** Native app contexts (as opposed to Chrome) need more commands when a native app is tested.
+
+## D-009: Reports are checked against results
+
+**Context.** Twice a reporter agent stated facts the results did not support: all failures reproduced (RUN-2026-0925-006) and 39 passes against 36 (RUN-2026-0925-024).
+
+**Decision.** `qa report verify` recomputes pass, fail, blocked, not run and flaky from the results and re-execution files and fails the run on any difference. It runs after the reporter in every regression workflow. The reporter writes the prose; the platform owns the numbers.
+
+**Cost.** None.
