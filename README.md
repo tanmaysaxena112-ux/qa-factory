@@ -44,7 +44,7 @@ npm run qa -- evidence verify RUN-YYYY-MMDD-001
 
 ## Status
 
-Phases 0 and 1 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
+Phases 0, 1 and 2 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
 
 | Stage | What happened |
 |---|---|
@@ -55,9 +55,20 @@ Phases 0 and 1 are complete. The API lane has run end to end with real agents on
 | Regression | Triage filed 4 findings in one root-cause cluster; the blind reviewer (Opus 5.5) rejected the release |
 | After the fix | 34/34 pass, 16/16 criteria met, all 7 seeded faults caught; released with named risks |
 
+Phase 2, the web lane, then ran the same pipeline on the shopping page:
+
+| Stage | What happened |
+|---|---|
+| PRD | 9 requirements; the PRD Critic raised 22 issues, including invented behaviour and an unagreed merge gate |
+| Test design | 46 cases plus 7 from the Edge Case Hunter; 3 dropped as not implementable or contradicting the PRD |
+| Automation | Rework once to add keyboard, viewport, layout and request actions; 49 declarative tests |
+| Calibration | Fault runs now stop at the first failure (35 minutes down to 2); 5/5 UI faults caught |
+| Blind review | Caught a runner bug: only the first browser was counted, hiding failures in Firefox and WebKit. Fixed with an exact integrity check against Playwright's own totals |
+| Release | 49/49 in Chromium, Firefox, WebKit and a Pixel 7 viewport; axe-core WCAG 2.2 AA clean; released with named risks |
+
 Every step's evidence is sealed per run. Decisions made during development are recorded as made by Claude on behalf of the QA Lead, never as the QA Lead.
 
-Next: the web lane (Playwright, visual, accessibility, cross-browser).
+Next: the mobile lane (WebdriverIO 9 and Appium 3).
 
 ## Documentation
 

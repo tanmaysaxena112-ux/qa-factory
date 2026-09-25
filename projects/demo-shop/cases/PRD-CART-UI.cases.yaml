@@ -125,6 +125,9 @@ cases:
         content and not an interpreted HTML element (for example, no bold
         styling is produced by the name).
     source: test_designer
+    manual:
+      reason: The fixed catalogue has no product name containing markup, so the case
+        needs a prepared build; checked by a person.
   - id: WEB-CART-08
     title: Quantity field is labelled per product and starts at 1
     requirement: REQ-003
@@ -666,6 +669,9 @@ cases:
         press "Add Product A to cart".
       - Read the message shown.
     source: test_designer
+    manual:
+      reason: A product cannot disappear from the fixed catalogue during a session;
+        checked by a person against a prepared build.
   - id: WEB-CART-34
     title: Removing a line that is no longer in the cart shows the "not in your
       cart" message
@@ -691,6 +697,9 @@ cases:
       - On the still-open page, press "Remove Product A".
       - Read the message shown.
     source: test_designer
+    manual:
+      reason: "Not yet automated: needs a request step removing the line behind the
+        page; scheduled for the next automation pass."
   - id: WEB-CART-35
     title: Add and remove works to completion in Chromium
     requirement: REQ-007

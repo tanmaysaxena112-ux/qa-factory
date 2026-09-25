@@ -135,3 +135,9 @@ Every test runs in Chromium, Firefox and WebKit at desktop size and in Chromium 
 ### Visual baselines
 
 `qa web baseline` creates only missing baselines, from the healthy build, into `projects/<p>/web/baselines/`, named per test, engine and platform. The QA Lead reviews the images at a gate before they become the reference. Regression runs never update baselines.
+
+### Browser exceptions and manual cases
+
+A web test may declare `skip_browsers: [{ browser, reason }]` only when the PRD names the exception. Skipped browsers are recorded in the test's evidence; every other requested browser must pass. The runner refuses results whose failed-run count differs from Playwright's own.
+
+A case that cannot be automated carries `manual: { reason }` in its case file. Reviewers and reports list it as manual work, never as an unexplained gap.

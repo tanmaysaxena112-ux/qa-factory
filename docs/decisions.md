@@ -49,3 +49,11 @@ Each decision states the context, the choice and what it costs. Newest last.
 **Decision.** Web tests are data (`qa.webtests.v1`) with a fixed action list. The runner compiles them into Playwright specs, inserting every value through JSON encoding, and runs them with the Playwright test runner across four engine and viewport projects. Accessibility uses axe-core; visual checks use Playwright screenshots against QA Lead approved baselines. When the format cannot express a case, the case stays manual and is reported, rather than approximated.
 
 **Cost.** New interaction kinds need a platform change. The first web automation run showed eight cases that needed keyboard, viewport, layout and mid-test request actions, which were added.
+
+## D-007: Independent review found a runner integrity bug
+
+**Context.** RUN-2026-0925-015 reported 47/47 web tests passing. The blind reviewer, reading Playwright's raw output, saw WEB-CART-43 fail in Firefox and WebKit. Playwright's JSON report holds one spec entry per project; the runner read only the first, which was Chromium. Calibration RUN-2026-0925-014 was affected the same way.
+
+**Decision.** The runner counts every project's entry, requires every requested browser to report, and refuses to produce results unless its failed-run count equals Playwright's own `stats.unexpected`. A regression test runs a test that passes in Chromium and fails in WebKit and requires FAIL. Browser exceptions exist only as declared `skip_browsers` entries with a reason from the PRD, recorded in evidence. The affected calibration was superseded by RUN-2026-0925-016.
+
+**Cost.** None beyond the fix. This is the case the blind reviewer exists for: a self-graded pipeline would have released on a false 47/47.

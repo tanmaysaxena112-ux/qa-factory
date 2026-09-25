@@ -63,7 +63,7 @@ steps:
 
   - id: stage-report
     needs: [triage, review]
-    run: qa stage --to report run:web/main/results.json run:web/rerun/comparison.json run:steps/review/output.json run:steps/triage/output.json projects/${params.project}/prd/${params.prd_id}.md
+    run: qa stage --to report run:web/main/results.json run:web/rerun/comparison.json run:steps/review/output.json run:steps/triage/output.json projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases
 
   - id: report
     needs: [stage-report]

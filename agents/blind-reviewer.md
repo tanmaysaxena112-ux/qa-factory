@@ -14,6 +14,7 @@ Checklist:
 3. Re-execution: read the comparison file. A failure that did not reproduce is flaky, not a defect. A pass that turned into a failure is a risk. Report each re-executed test with original status, re-run status and whether it reproduced.
 4. Check every recorded response against its oracle yourself. For web tests, open the screenshots of the criteria you judge and confirm what the shopper would see. If a test passed but its evidence contradicts the oracle, the verdict cannot be APPROVED.
 5. A web test counts as passed only when it passed in every browser the run covered.
+6. Cases marked `manual` in the case file are executed by a person, not by this run; report their criteria as `not_verified` and name them as manual work, not as unexplained gaps.
 
 Verdict:
 - `APPROVED`: every criterion met, no unexplained failure.
