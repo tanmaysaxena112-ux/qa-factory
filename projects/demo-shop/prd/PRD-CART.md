@@ -56,6 +56,8 @@ Edge cases:
 - EC-002.2: Adding exactly the remaining stock is accepted; one more than the remaining stock returns 409.
 - EC-002.3: When a request breaks both the 10-per-line limit and the stock limit, the quantity rule is checked first and the response is 400 "invalid_quantity".
 - EC-002.4: Error responses always contain an "error" field with the codes above; any other fields are not defined and must not be relied on.
+- EC-002.5: product_id is matched exactly, without trimming; " P-1 " does not match P-1 and returns 404 "product_not_found".
+- EC-002.6: A body that is valid JSON but not an object (an array, number or string) returns 400 "invalid_body".
 
 ### REQ-003: View cart contents and totals
 Risk: high (money)
@@ -79,6 +81,7 @@ Acceptance criteria:
 
 Edge cases:
 - EC-004.1: After a removal, GET /cart no longer lists the line and the total reflects only the remaining lines.
+- EC-004.2: A DELETE whose product_id segment names no line in the cart, however long or unusual, returns 404 "not_in_cart"; an empty segment is not a cart route and its response is not defined.
 
 ## Design references
 - projects/demo-shop/api/openapi.yaml
@@ -88,4 +91,5 @@ Edge cases:
 ## Revision history
 - 2026-09-25 draft by prd-author (run RUN-2026-0925-002).
 - 2026-09-25 critique by prd-critic: 14 issues (run RUN-2026-0925-002).
-- 2026-09-25 approved by claude-code on behalf of the QA Lead (github:tanmaysaxena112-ux). Decisions: catalogue order undefined; out-of-stock products listed; error body defined only by its "error" code; exceeding the 10-per-line limit by merging returns 400 invalid_quantity and is checked before stock; missing, empty or non-string product_id returns 400 invalid_body; malformed JSON returns 400 invalid_body; changing quantity means remove and re-add; one shared cart per server; concurrency out of scope; health endpoint out of scope; prices are whole cents so no rounding rule is needed. REQ-004 raised from low to medium risk because a remove that silently fails changes the amount a shopper would pay.
+- 2026-09-25 approved by claude-code on behalf of the QA Lead (github:tanmaysaxena112-ux). Decisions: catalogue order undefined; out-of-stock products listed; error body defined only by its "error" code; exceeding the 10-per-line limit by merging returns 400 invalid_quantity and is checked before stock; missing, empty or non-string product_id returns 400 invalid_body; malformed JSON returns 400 invalid_body; changing quantity means remove and re-add; one shared cart per server; concurrency out of scope; health endpoint out of scope; prices are whole cents so no rounding rule is needed.
+- 2026-09-25 edge cases EC-002.5, EC-002.6 and EC-004.2 added by claude-code on behalf of the QA Lead, answering three open questions from edge-case-hunter (run RUN-2026-0925-003). REQ-004 raised from low to medium risk because a remove that silently fails changes the amount a shopper would pay.

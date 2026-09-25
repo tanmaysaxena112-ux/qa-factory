@@ -1,0 +1,723 @@
+schema: qa.cases.v1
+prd_id: PRD-CART
+project: demo-shop
+cases:
+  - id: API-CART-01
+    title: Get product catalogue returns required fields
+    requirement: REQ-001
+    criteria:
+      - AC-001.1
+    oracle:
+      criterion: AC-001.1
+      expected: Response is 200 with a JSON array in which every product has id, name,
+        price and stock.
+    surface: api
+    technique: happy_path
+    preconditions:
+      - Demo Shop API server is running.
+    steps:
+      - Send GET /products.
+      - Record the HTTP status code and the response body.
+      - Verify the status code is 200 and the body is a JSON array.
+      - Verify every object in the array has the keys id, name, price and stock.
+    source: test_designer
+  - id: API-CART-02
+    title: Catalogue includes out-of-stock products
+    requirement: REQ-001
+    criteria:
+      - AC-001.2
+    oracle:
+      criterion: AC-001.2
+      expected: Every product in the catalogue is listed, including products whose
+        stock is 0.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Demo Shop API server is running.
+      - The catalogue loaded at server start contains at least one product with
+        stock 0.
+    steps:
+      - Send GET /products.
+      - Search the returned array for any product whose stock value is 0.
+      - Verify at least one product with stock 0 is present in the returned
+        array.
+    source: test_designer
+  - id: API-CART-03
+    title: Product prices are exact numeric cent values
+    requirement: REQ-001
+    criteria:
+      - AC-001.3
+    oracle:
+      criterion: AC-001.3
+      expected: Each price is a number in US dollars, exact to the cent.
+    surface: api
+    technique: money
+    preconditions:
+      - Demo Shop API server is running.
+    steps:
+      - Send GET /products.
+      - For each product in the response, verify the price field is a JSON
+        number, not a string.
+      - For each price value, verify price * 100 is an integer, confirming the
+        value is exact to the cent.
+    source: test_designer
+  - id: API-CART-04
+    title: Add new product to empty cart with minimum quantity
+    requirement: REQ-002
+    criteria:
+      - AC-002.1
+    oracle:
+      criterion: AC-002.1
+      expected: For quantity 1 on a product not yet in the cart, response is 201 with
+        a line containing product_id, quantity and line_total.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Demo Shop API server is running.
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id
+        and P.price.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 1}.'
+      - Record the HTTP status code and response body.
+      - Verify the status code is 201.
+      - Verify the returned line has product_id equal to P.id, quantity equal to
+        1, and line_total equal to P.price * 1.
+    source: test_designer
+  - id: API-CART-05
+    title: Adding the same product twice merges into one line
+    requirement: REQ-002
+    criteria:
+      - AC-002.2
+    oracle:
+      criterion: AC-002.2
+      expected: A second add for a product already in the cart adds the requested
+        quantity to that line and returns 201 with the updated line; the cart
+        never holds two lines for the same product.
+    surface: api
+    technique: state_transition
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 5; record P.id
+        and P.price.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 2}.
+        Verify status 201.'
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 3}.'
+      - Verify status 201 and the returned line has product_id P.id, quantity 5,
+        and line_total equal to P.price * 5.
+      - Send GET /cart and verify it contains exactly one line for P.id, not two.
+    source: test_designer
+  - id: API-CART-06
+    title: Add item with missing quantity is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: A missing quantity returns 400 with error "invalid_quantity" and
+        leaves the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id}.'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity".
+      - Send GET /cart and verify there is no line for P.id (cart unchanged).
+    source: test_designer
+  - id: API-CART-07
+    title: Add item with non-integer quantity is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: A quantity that is not an integer returns 400 with error
+        "invalid_quantity" and leaves the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 2.5}.'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity".
+      - Send GET /cart and verify there is no line for P.id (cart unchanged).
+    source: test_designer
+  - id: API-CART-08
+    title: Add item with quantity zero is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: A quantity below 1 returns 400 with error "invalid_quantity" and
+        leaves the cart unchanged.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 0}.'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity".
+      - Send GET /cart and verify there is no line for P.id (cart unchanged).
+    source: test_designer
+  - id: API-CART-09
+    title: Merged add that would exceed the 10-per-line limit is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: A quantity that would make the line's combined quantity exceed 10
+        returns 400 with error "invalid_quantity" and leaves the cart unchanged.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 11; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 6}.
+        Verify status 201 and line quantity 6.'
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 5}
+        (combined would be 11).'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity".
+      - Send GET /cart and verify the line for P.id still has quantity 6
+        (unchanged by the rejected request).
+    source: test_designer
+  - id: API-CART-10
+    title: Add item with missing product_id is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.4
+    oracle:
+      criterion: AC-002.4
+      expected: A missing product_id returns 400 with error "invalid_body" and leaves
+        the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+    steps:
+      - 'Send POST /cart/items with body {"quantity": 1}.'
+      - Verify the status code is 400 and the response has error "invalid_body".
+      - Send GET /cart and verify the cart is still empty (unchanged).
+    source: test_designer
+  - id: API-CART-11
+    title: Add item with non-string product_id is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.4
+    oracle:
+      criterion: AC-002.4
+      expected: A product_id that is not a string returns 400 with error
+        "invalid_body" and leaves the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+    steps:
+      - 'Send POST /cart/items with body {"product_id": 123, "quantity": 1}.'
+      - Verify the status code is 400 and the response has error "invalid_body".
+      - Send GET /cart and verify the cart is still empty (unchanged).
+    source: test_designer
+  - id: API-CART-12
+    title: Add item with empty string product_id is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.4
+    oracle:
+      criterion: AC-002.4
+      expected: An empty string product_id returns 400 with error "invalid_body" and
+        leaves the cart unchanged.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+    steps:
+      - 'Send POST /cart/items with body {"product_id": "", "quantity": 1}.'
+      - Verify the status code is 400 and the response has error "invalid_body".
+      - Send GET /cart and verify the cart is still empty (unchanged).
+    source: test_designer
+  - id: API-CART-13
+    title: Add item with whitespace-only product_id is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.4
+    oracle:
+      criterion: AC-002.4
+      expected: A whitespace-only string product_id returns 400 with error
+        "invalid_body" and leaves the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+    steps:
+      - 'Send POST /cart/items with body {"product_id": "   ", "quantity": 1}.'
+      - Verify the status code is 400 and the response has error "invalid_body".
+      - Send GET /cart and verify the cart is still empty (unchanged).
+    source: test_designer
+  - id: API-CART-14
+    title: Add item with unknown product_id returns not found
+    requirement: REQ-002
+    criteria:
+      - AC-002.5
+    oracle:
+      criterion: AC-002.5
+      expected: A non-empty product_id that does not match any product returns 404
+        with error "product_not_found".
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and confirm the id "does-not-exist-id" is not present
+        in the catalogue.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": "does-not-exist-id",
+        "quantity": 1}.'
+      - Verify the status code is 404 and the response has error
+        "product_not_found".
+    source: test_designer
+  - id: API-CART-15
+    title: Add item whose combined quantity exceeds stock is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.6
+    oracle:
+      criterion: AC-002.6
+      expected: A request whose combined line quantity would exceed the product's
+        stock returns 409 with error "insufficient_stock" and leaves the cart
+        unchanged.
+    surface: api
+    technique: money
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock between 1 and 9
+        inclusive; record P.id and P.stock.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity":
+        P.stock + 1}.'
+      - Verify the status code is 409 and the response has error
+        "insufficient_stock".
+      - Send GET /cart and verify there is no line for P.id (cart unchanged).
+    source: test_designer
+  - id: API-CART-16
+    title: Add item with malformed JSON body is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.7
+    oracle:
+      criterion: AC-002.7
+      expected: A request body that is not valid JSON returns 400 with error
+        "invalid_body".
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+    steps:
+      - 'Send POST /cart/items with Content-Type application/json and the raw
+        body {product_id: "x", quantity: 1 (missing closing brace, not valid
+        JSON).'
+      - Verify the status code is 400 and the response has error "invalid_body".
+    source: test_designer
+  - id: API-CART-17
+    title: Adding exactly 10 units on a new line is accepted
+    requirement: REQ-002
+    criteria:
+      - EC-002.1
+    oracle:
+      criterion: EC-002.1
+      expected: A quantity of exactly 10 on a new line is accepted when stock allows.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 10; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 10}.'
+      - Verify the status code is 201 and the returned line has quantity 10.
+    source: test_designer
+  - id: API-CART-18
+    title: Adding exactly the remaining stock is accepted
+    requirement: REQ-002
+    criteria:
+      - EC-002.2
+    oracle:
+      criterion: EC-002.2
+      expected: Adding exactly the remaining stock is accepted.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock between 1 and 10
+        inclusive; record P.id and P.stock.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity":
+        P.stock}.'
+      - Verify the status code is 201 and the returned line has quantity equal
+        to P.stock.
+    source: test_designer
+  - id: API-CART-19
+    title: Adding one more than the remaining stock is rejected
+    requirement: REQ-002
+    criteria:
+      - EC-002.2
+    oracle:
+      criterion: EC-002.2
+      expected: One more than the remaining stock returns 409.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock between 1 and 9
+        inclusive (so stock + 1 does not also trip the 10-per-line limit);
+        record P.id and P.stock.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity":
+        P.stock + 1}.'
+      - Verify the status code is 409 and the response has error
+        "insufficient_stock".
+    source: test_designer
+  - id: API-CART-20
+    title: When both the 10-per-line and stock limits are broken, the quantity rule
+      wins
+    requirement: REQ-002
+    criteria:
+      - EC-002.3
+    oracle:
+      criterion: EC-002.3
+      expected: When a request breaks both the 10-per-line limit and the stock limit,
+        the quantity rule is checked first and the response is 400
+        "invalid_quantity".
+    surface: api
+    technique: decision_table
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock <= 9 (so a quantity
+        of 11 breaks both the per-line limit and the stock limit); record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 11}.'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity" (not 409 "insufficient_stock").
+    source: test_designer
+  - id: API-CART-21
+    title: View cart returns items, currency and total
+    requirement: REQ-003
+    criteria:
+      - AC-003.1
+    oracle:
+      criterion: AC-003.1
+      expected: GET /cart returns 200 with items (a list of lines), currency and total.
+    surface: api
+    technique: happy_path
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - 'Call GET /products and select a product P with stock >= 1; add it via
+        POST /cart/items with body {"product_id": P.id, "quantity": 1}.'
+    steps:
+      - Send GET /cart.
+      - Verify the status code is 200.
+      - Verify the response body has the keys items (a list), currency and total.
+    source: test_designer
+  - id: API-CART-22
+    title: Cart currency is always USD
+    requirement: REQ-003
+    criteria:
+      - AC-003.2
+    oracle:
+      criterion: AC-003.2
+      expected: currency is always "USD".
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - 'Call GET /products and select a product P with stock >= 1; add it via
+        POST /cart/items with body {"product_id": P.id, "quantity": 1}.'
+    steps:
+      - Send GET /cart.
+      - Verify the currency field in the response equals exactly "USD".
+    source: test_designer
+  - id: API-CART-23
+    title: Line total equals price times quantity with no floating point error
+    requirement: REQ-003
+    criteria:
+      - AC-003.3
+    oracle:
+      criterion: AC-003.3
+      expected: Each line_total equals the product's price multiplied by the line
+        quantity, exact to the cent, with no floating point error such as
+        14.969999.
+    surface: api
+    technique: money
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 3; record P.id
+        and P.price.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 3}.
+        Verify status 201.'
+      - Send GET /cart.
+      - Verify the line for P.id has line_total exactly equal to P.price * 3,
+        with no floating point remainder such as an extra .00000x fraction.
+    source: test_designer
+  - id: API-CART-24
+    title: Cart total equals the sum of all line totals
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+    oracle:
+      criterion: AC-003.4
+      expected: total equals the sum of all line totals, exact to the cent.
+    surface: api
+    technique: money
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select two distinct products P1 (stock >= 2) and
+        P2 (stock >= 1); record their ids and prices.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P1.id, "quantity": 2}.
+        Verify status 201.'
+      - 'Send POST /cart/items with body {"product_id": P2.id, "quantity": 1}.
+        Verify status 201.'
+      - Send GET /cart.
+      - Verify total equals the sum of the two lines' line_total values, exact
+        to the cent.
+    source: test_designer
+  - id: API-CART-25
+    title: Empty cart shows zero total and empty items
+    requirement: REQ-003
+    criteria:
+      - EC-003.1
+    oracle:
+      criterion: EC-003.1
+      expected: An empty cart returns items as an empty list, total 0 and currency "USD".
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test); no items have been
+        added.
+    steps:
+      - Send GET /cart.
+      - Verify the status code is 200.
+      - Verify items is an empty list, total equals 0, and currency equals "USD".
+    source: test_designer
+  - id: API-CART-26
+    title: Remove an existing line from the cart
+    requirement: REQ-004
+    criteria:
+      - AC-004.1
+    oracle:
+      criterion: AC-004.1
+      expected: DELETE /cart/items/{product_id} for a product in the cart returns 204
+        with no body and removes that line.
+    surface: api
+    technique: happy_path
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - 'Call GET /products and select a product P with stock >= 1; add it via
+        POST /cart/items with body {"product_id": P.id, "quantity": 1}.'
+    steps:
+      - Send DELETE /cart/items/P.id.
+      - Verify the status code is 204 and the response body is empty.
+      - Send GET /cart and verify no line for P.id remains.
+    source: test_designer
+  - id: API-CART-27
+    title: Remove a product not in the cart returns not_in_cart
+    requirement: REQ-004
+    criteria:
+      - AC-004.2
+    oracle:
+      criterion: AC-004.2
+      expected: DELETE /cart/items/{product_id} for a product not in the cart returns
+        404 with error "not_in_cart".
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; do not add it
+        to the cart.
+    steps:
+      - Send DELETE /cart/items/P.id.
+      - Verify the status code is 404 and the response has error "not_in_cart".
+    source: test_designer
+  - id: API-CART-28
+    title: After removal the cart total reflects only the remaining lines
+    requirement: REQ-004
+    criteria:
+      - EC-004.1
+    oracle:
+      criterion: EC-004.1
+      expected: After a removal, GET /cart no longer lists the line and the total
+        reflects only the remaining lines.
+    surface: api
+    technique: state_transition
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select two distinct products P1 (stock >= 1) and
+        P2 (stock >= 1); record their ids and prices.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P1.id, "quantity": 1}.
+        Verify status 201.'
+      - 'Send POST /cart/items with body {"product_id": P2.id, "quantity": 1}.
+        Verify status 201.'
+      - Send GET /cart and record the total (should equal P1.price + P2.price).
+      - Send DELETE /cart/items/P1.id. Verify status 204.
+      - Send GET /cart. Verify items no longer contains a line for P1.id, and
+        total equals P2.price only.
+    source: test_designer
+  - id: API-CART-29
+    title: Merging into an existing line that would exceed stock is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.6
+    oracle:
+      criterion: AC-002.6
+      expected: A request whose combined line quantity would exceed the product's
+        stock returns 409 with error "insufficient_stock" and leaves the cart
+        unchanged.
+    surface: api
+    technique: decision_table
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock between 2 and 9
+        inclusive; record P.id and P.stock.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity":
+        P.stock - 1}. Verify status 201 and the line quantity equals P.stock -
+        1.'
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 2}
+        (combined quantity = P.stock + 1, which exceeds stock but stays at or
+        below 10 since P.stock <= 9).'
+      - Verify the status code is 409 and the response has error
+        "insufficient_stock".
+      - Send GET /cart and verify the line for P.id still has quantity P.stock -
+        1 (unchanged by the rejected merge).
+    source: edge_case_hunter
+  - id: API-CART-30
+    title: Adding a product with zero stock is rejected as insufficient stock
+    requirement: REQ-002
+    criteria:
+      - AC-002.6
+    oracle:
+      criterion: AC-002.6
+      expected: A request whose combined line quantity would exceed the product's
+        stock returns 409 with error "insufficient_stock" and leaves the cart
+        unchanged.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product Z whose stock equals 0
+        (guaranteed to exist per AC-001.2); record Z.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": Z.id, "quantity": 1}.'
+      - Verify the status code is 409 and the response has error
+        "insufficient_stock".
+      - Send GET /cart and verify there is no line for Z.id (cart unchanged).
+    source: edge_case_hunter
+  - id: API-CART-31
+    title: Add item with quantity given as a string is rejected
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: A quantity that is missing, not an integer, below 1, or that would
+        make the line's combined quantity exceed 10, returns 400 with error
+        "invalid_quantity" and leaves the cart unchanged.
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": "5"}
+        (quantity sent as a JSON string, not a number).'
+      - Verify the status code is 400 and the response has error
+        "invalid_quantity".
+      - Send GET /cart and verify there is no line for P.id (cart unchanged).
+    source: edge_case_hunter
+  - id: API-CART-32
+    title: Merging two adds that combine to exactly the 10-per-line maximum is
+      accepted
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: Only a combined quantity that would exceed 10 is rejected; a combined
+        quantity of exactly 10 is not invalid_quantity.
+    surface: api
+    technique: boundary
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 10; record P.id
+        and P.price.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 4}.
+        Verify status 201 and line quantity 4.'
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 6}
+        (combined = 10).'
+      - Verify the status code is 201 and the returned line has quantity 10 and
+        line_total equal to P.price * 10.
+      - Send GET /cart and verify exactly one line for P.id with quantity 10
+        (the merge was accepted, not rejected).
+    source: edge_case_hunter
+  - id: API-CART-33
+    title: Removing a line then re-adding the same product starts a fresh line
+    requirement: REQ-002
+    criteria:
+      - AC-002.1
+    oracle:
+      criterion: AC-002.1
+      expected: POST /cart/items for a product not yet in the cart returns 201 with a
+        line containing product_id, quantity and line_total equal to the newly
+        requested quantity.
+    surface: api
+    technique: state_transition
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 5; record P.id
+        and P.price.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 3}.
+        Verify status 201 and line quantity 3.'
+      - Send DELETE /cart/items/P.id. Verify status 204.
+      - Send GET /cart and verify no line for P.id remains.
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 2}
+        (re-add with a different quantity).'
+      - Verify the status code is 201 and the returned line has quantity exactly
+        2 and line_total equal to P.price * 2, with no trace of the quantity 3
+        from before the removal.
+      - Send GET /cart and verify the single line for P.id has quantity 2.
+    source: edge_case_hunter
+  - id: API-CART-34
+    title: Removing the same product twice in a row returns not_in_cart on the
+      second attempt
+    requirement: REQ-004
+    criteria:
+      - AC-004.2
+    oracle:
+      criterion: AC-004.2
+      expected: DELETE /cart/items/{product_id} for a product not in the cart returns
+        404 with error "not_in_cart".
+    surface: api
+    technique: state_transition
+    preconditions:
+      - Cart is empty (call POST /__reset before the test).
+      - Call GET /products and select a product P with stock >= 1; record P.id.
+    steps:
+      - 'Send POST /cart/items with body {"product_id": P.id, "quantity": 1}.
+        Verify status 201.'
+      - Send DELETE /cart/items/P.id. Verify status 204 (line removed).
+      - Send DELETE /cart/items/P.id a second time.
+      - Verify the status code is 404 and the response has error "not_in_cart"
+        (the line no longer exists after the first successful removal).
+    source: edge_case_hunter
