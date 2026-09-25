@@ -67,8 +67,9 @@ const server = createServer(async (req, res) => {
 
   if (req.method === 'POST' && path === '/cart/items') {
     const body = await readJson(req);
-    if (!body || typeof body !== 'object') return send(res, 400, { error: 'invalid_body' });
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return send(res, 400, { error: 'invalid_body' });
     const { product_id: productId, quantity } = body;
+    if (typeof productId !== 'string' || productId.trim() === '') return send(res, 400, { error: 'invalid_body' });
     const product = PRODUCTS.find((p) => p.id === productId);
     if (!product && FAULT !== 'no-404') return send(res, 404, { error: 'product_not_found' });
     if (!product) return send(res, 201, { product_id: productId, quantity, line_total: 0 });
