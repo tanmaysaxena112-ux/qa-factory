@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo Shop</title>
+  <style>
+    :root { --ink: #1c2330; --muted: #5a6473; --line: #d6dbe1; --accent: #1f5fae; --bg: #f6f7f5; --error: #a32a1f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
+    header { padding: 16px 24px; border-bottom: 1px solid var(--line); background: #fff; }
+    h1 { margin: 0; font-size: 22px; }
+    main { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; padding: 24px; max-width: 1000px; margin: 0 auto; }
+    @media (max-width: 700px) { main { grid-template-columns: 1fr; padding: 16px; } }
+    h2 { font-size: 17px; margin: 0 0 12px; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .product, .line { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .product .name { font-weight: 600; flex: 1 1 140px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    input { width: 64px; padding: 6px; font: inherit; }
+    button { font: inherit; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+    button:disabled { background: #e3e6ea; color: #4f5763; border-color: #c4c9cf; cursor: not-allowed; }
+    button.secondary { background: #fff; color: var(--accent); }
+    button:focus-visible, input:focus-visible { outline: 3px solid #f0a020; outline-offset: 2px; }
+    .total { margin-top: 12px; font-size: 18px; font-weight: 700; }
+    .error { color: var(--error); font-weight: 600; min-height: 1.4em; margin: 8px 0 0; }
+    .empty { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header><h1>Demo Shop</h1></header>
+  <main>
+    <section aria-labelledby="catalogue-heading">
+      <h2 id="catalogue-heading">Products</h2>
+      <ul id="products"></ul>
+    </section>
+    <section aria-labelledby="cart-heading" id="cart-section">
+      <h2 id="cart-heading">Cart</h2>
+      <ul id="cart-lines"></ul>
+      <p class="empty" id="cart-empty">Your cart is empty.</p>
+      <p class="total" id="cart-total" data-testid="cart-total">Total: $0.00</p>
+      <p class="error" id="error" role="alert"></p>
+    </section>
+  </main>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

@@ -6,6 +6,8 @@ The PRD is the single source of truth for a feature. Where it disagrees with any
 
 `projects/<project>/prd/PRD-<SLUG>.md`. The machine index (`qa.prd.v1`) is generated from it and never edited by hand.
 
+Front matter: `prd_id`, `project`, `title`, `status`, and optionally `surfaces` (for example `[web]`). Coverage is required on the PRD's surfaces, or on every project surface when none are named.
+
 ## Required sections
 
 1. Summary: the problem, who has it, and the outcome wanted.

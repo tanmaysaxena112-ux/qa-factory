@@ -1,6 +1,6 @@
 name: demo-shop
 description: Local demo cart API used to demonstrate the full QA Factory pipeline
-surfaces: [api]
+surfaces: [api, web]
 envs:
   dev:
     # The runner starts the app itself on a free port, so every run is isolated.

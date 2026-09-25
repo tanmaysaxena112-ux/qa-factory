@@ -1,0 +1,54 @@
+schema: qa.workflow.v1
+name: automate-web
+description: >
+  Approved web cases to declarative Playwright tests. The QA Lead reviews the
+  tests, then reviews the visual baselines captured from the healthy build, and
+  only then is the suite calibrated across Chromium, Firefox, WebKit and a phone.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: PRD whose web cases are automated }
+steps:
+  - id: check-cases
+    run: qa cases validate --project ${params.project}
+
+  - id: stage
+    needs: [check-cases]
+    run: qa stage --to automate projects/${params.project}/cases/${params.prd_id}.cases.yaml projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/project.yml projects/${params.project}/knowledge/testdata.yaml
+
+  - id: automate
+    needs: [stage]
+    agent: automation-web
+    cwd: ${run.dir}/staged/automate
+    prompt: |
+      Implement every WEB case of ${params.prd_id} for project ${params.project}. INDEX.txt lists every file in your working folder.
+    output: qa.webtests.v1
+    timeout_seconds: 1500
+
+  - id: qa-lead
+    needs: [automate]
+    gate: qa-lead
+    message: Review the generated web tests against their cases.
+
+  - id: promote
+    needs: [qa-lead]
+    run: qa promote --step automate --to projects/${params.project}/web/tests/${params.prd_id}.json
+
+  - id: validate
+    needs: [promote]
+    run: qa web validate --project ${params.project}
+
+  - id: baseline
+    needs: [validate]
+    run: qa web baseline --project ${params.project}
+    timeout_seconds: 1200
+
+  - id: qa-lead-visual
+    needs: [baseline]
+    gate: qa-lead
+    message: Review every new visual baseline image in the project's web/baselines folder before it becomes the reference.
+
+  - id: calibrate
+    needs: [qa-lead-visual]
+    run: qa calibrate --project ${params.project} --surface web
+    timeout_seconds: 2400

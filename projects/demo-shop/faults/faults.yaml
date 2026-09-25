@@ -15,3 +15,18 @@ faults:
     description: More items than are in stock can be added
   - id: delete-noop
     description: Removing a line reports success but leaves it in the cart
+  - id: ui-total-stale
+    surface: web
+    description: The page removes a line but does not refresh the total
+  - id: ui-no-label
+    surface: web
+    description: Quantity inputs have no accessible label
+  - id: ui-error-hidden
+    surface: web
+    description: Error responses are not shown to the shopper
+  - id: ui-currency
+    surface: web
+    description: Money is shown as "14.97 USD" instead of "$14.97"
+  - id: ui-layout-shift
+    surface: web
+    description: The product and cart columns swap widths

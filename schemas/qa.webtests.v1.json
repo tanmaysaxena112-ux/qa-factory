@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.webtests.v1",
+  "title": "Declarative web tests, compiled into Playwright specs by the runner. Data only, no scripts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project", "tests"],
+  "properties": {
+    "schema": { "const": "qa.webtests.v1" },
+    "project": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "tests": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/test" } }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 2,
+      "properties": {
+        "role": { "type": "string", "enum": ["button", "heading", "textbox", "spinbutton", "listitem", "list", "alert", "region", "link", "checkbox"] },
+        "name": { "type": "string" },
+        "label": { "type": "string" },
+        "testid": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["goto", "click", "fill", "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_enabled", "expect_disabled", "expect_count", "check_a11y", "screenshot"]
+        },
+        "target": { "$ref": "#/$defs/target" },
+        "value": { "type": "string" },
+        "count": { "type": "integer", "minimum": 0 },
+        "path": { "type": "string", "pattern": "^/" },
+        "name": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_id", "oracle", "title", "steps"],
+      "properties": {
+        "test_id": { "type": "string", "pattern": "^WEB-[A-Z0-9]+-[0-9]{2,}$" },
+        "oracle": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      }
+    }
+  }
+}

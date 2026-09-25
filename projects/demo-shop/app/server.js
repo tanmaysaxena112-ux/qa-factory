@@ -1,6 +1,7 @@
 // Demo shop API: the product under test for the demo project. It holds state in
 // memory and supports deliberate faults (DEMO_FAULT) so calibration can prove
 // the test suite catches real defects.
+import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 
 const BUILD = process.env.DEMO_BUILD ?? 'demo-shop-1.0.0';
@@ -56,6 +57,13 @@ const server = createServer(async (req, res) => {
   const path = url.pathname;
 
   if (req.method === 'GET' && path === '/health') return send(res, 200, { status: 'ok', build: BUILD });
+  if (req.method === 'GET' && (path === '/' || path === '/app.js')) {
+    const file = path === '/' ? 'index.html' : 'app.js';
+    let body = readFileSync(new URL(`./public/${file}`, import.meta.url), 'utf8');
+    if (file === 'index.html') body = body.replace('<script src="/app.js"', `<script>window.DEMO_FAULT = ${JSON.stringify(FAULT)};</script>\n  <script src="/app.js"`);
+    res.writeHead(200, { 'content-type': file === 'app.js' ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8' });
+    return res.end(body);
+  }
   if (req.method === 'POST' && path === '/__reset') {
     cart = new Map();
     return send(res, 204);

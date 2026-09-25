@@ -9,6 +9,7 @@ import { redact } from '../engine/redact.js';
 import { loadSchemas } from '../engine/schemas.js';
 import { openStore } from '../engine/store.js';
 import { loadApiTests, runApiTests } from '../runners/api.js';
+import { BROWSERS, loadWebTests, runWebTests } from '../runners/web.js';
 import { calibrate } from '../runners/calibrate.js';
 import { loadProject } from '../runners/project.js';
 
@@ -30,11 +31,27 @@ function evidenceSink(paths, out) {
   const runId = process.env.QA_RUN_ID;
   if (runId) {
     const evidence = createEvidence(paths.evidence);
-    return { runId, write: (rel, content) => evidence.write(runId, rel, content) };
+    const runDir = join(paths.evidence, runId);
+    return {
+      runId,
+      write: (rel, content) => evidence.write(runId, rel, content),
+      dir(rel) {
+        const d = resolve(runDir, rel);
+        if (d !== runDir && !d.startsWith(runDir + sep)) throw new Error(`Evidence path escapes the run folder: ${rel}`);
+        mkdirSync(d, { recursive: true });
+        return d;
+      },
+    };
   }
   const base = resolve(need(out, 'Outside a workflow run, pass --out <folder> for evidence'));
   return {
     runId: 'RUN-0000-0000-000',
+    dir(rel) {
+      const d = resolve(base, rel);
+      if (d !== base && !d.startsWith(base + sep)) throw new Error(`Evidence path escapes the folder: ${rel}`);
+      mkdirSync(d, { recursive: true });
+      return d;
+    },
     write(rel, content) {
       const file = resolve(base, rel);
       if (!file.startsWith(base + sep)) throw new Error(`Evidence path escapes the folder: ${rel}`);
@@ -54,6 +71,13 @@ function insideRepo(repoRoot, rel) {
   const r = relative(repoRoot, abs);
   if (r.startsWith('..') || isAbsolute(r)) throw new Error(`Path must be inside the repository: ${rel}`);
   return abs;
+}
+
+function browserList(value) {
+  if (!value) return Object.keys(BROWSERS);
+  const list = value.split(',');
+  for (const b of list) if (!BROWSERS[b]) throw new Error(`Unknown browser "${b}"; choose from ${Object.keys(BROWSERS).join(', ')}`);
+  return list;
 }
 
 export async function runCommand(command, rest, values) {
@@ -103,7 +127,8 @@ export async function runCommand(command, rest, values) {
           report.push({ prd_id: prd.prd_id, problems: ['no case file'] });
           continue;
         }
-        const { problems, coverage } = checkCases(doc, prd, { surfaces: project.surfaces, schemas });
+        // A PRD may name the surfaces it covers; otherwise every project surface applies.
+        const { problems, coverage } = checkCases(doc, prd, { surfaces: prd.surfaces ?? project.surfaces, schemas });
         failed ||= problems.length > 0;
         report.push({ prd_id: prd.prd_id, cases: doc.cases.length, coverage, problems });
       }
@@ -184,16 +209,90 @@ export async function runCommand(command, rest, values) {
   }
 
   if (command === 'calibrate') {
-    const project = loadProject(paths.repoRoot, need(values.project, 'Usage: qa calibrate --project <name>'));
-    const loaded = loadApiTests(project, schemas);
+    const project = loadProject(paths.repoRoot, need(values.project, 'Usage: qa calibrate --project <name> [--surface api|web]'));
+    const surface = values.surface ?? 'api';
+    if (!['api', 'web'].includes(surface)) throw new Error(`Unknown surface "${surface}"`);
+    const loaded = surface === 'web' ? loadWebTests(project, schemas) : loadApiTests(project, schemas);
     if (loaded.problems.length) {
       console.error(`Automation gate failed:\n  ${loaded.problems.join('\n  ')}`);
       return FAILED;
     }
     const sink = evidenceSink(paths, values.out);
-    const record = await calibrate({ repoRoot: paths.repoRoot, project, envName: values.env ?? 'dev', tests: loaded.tests, schemas, sink, runId: sink.runId });
+    const record = await calibrate({
+      repoRoot: paths.repoRoot, project, envName: values.env ?? 'dev', tests: loaded.tests, schemas, sink, runId: sink.runId, surface, browsers: browserList(values.browsers),
+    });
     console.log(JSON.stringify(record));
     return record.ok ? 0 : FAILED;
+  }
+
+  if (command === 'web') {
+    const [sub] = rest;
+    const project = loadProject(paths.repoRoot, need(values.project, `Usage: qa web ${sub ?? 'run'} --project <name>`));
+    const loaded = loadWebTests(project, schemas);
+    if (sub === 'validate') {
+      console.log(loaded.problems.length ? `INVALID\n  ${loaded.problems.join('\n  ')}` : `valid    ${loaded.tests.length} web tests, each implementing an approved case`);
+      return loaded.problems.length ? FAILED : 0;
+    }
+    if (loaded.problems.length) {
+      console.error(`Automation gate failed:\n  ${loaded.problems.join('\n  ')}`);
+      return FAILED;
+    }
+    const envName = values.env ?? 'dev';
+    const browsers = browserList(values.browsers);
+    if (sub === 'run' || sub === 'baseline') {
+      let tests = loaded.tests;
+      if (values.plan) {
+        const plan = JSON.parse(readFileSync(values.plan, 'utf8'));
+        const check = schemas.validate('qa.testplan.v1', plan);
+        if (!check.ok) throw new Error(`Plan breaks qa.testplan.v1: ${check.errors.join('; ')}`);
+        const wanted = new Set(plan.tests.filter((t) => t.surface === 'web').map((t) => t.test_id));
+        tests = tests.filter((t) => wanted.has(t.test_id));
+      }
+      if (values.only) {
+        const wanted = new Set(values.only.split(','));
+        tests = tests.filter((t) => wanted.has(t.test_id));
+      }
+      if (!tests.length) throw new Error('No web tests selected');
+      const sink = evidenceSink(paths, values.out);
+      // Baselines are only ever created where missing, from the healthy build;
+      // a person reviews the images before they are committed.
+      const summary = await runWebTests({
+        repoRoot: paths.repoRoot, project, envName, tests, schemas, sink, runId: sink.runId, browsers,
+        label: sub === 'baseline' ? 'baseline' : values.label ?? 'main', updateSnapshots: sub === 'baseline' ? 'missing' : 'none',
+      });
+      const { results, ...counts } = summary;
+      console.log(JSON.stringify(counts));
+      return 0;
+    }
+    if (sub === 'rerun') {
+      const runId = need(process.env.QA_RUN_ID, 'qa web rerun only runs inside a workflow run');
+      const file = join(paths.evidence, runId, 'web', values.label ?? 'main', 'results.json');
+      if (!existsSync(file)) throw new Error(`No web results to re-run at ${relative(paths.dataRoot, file)}`);
+      const previous = JSON.parse(readFileSync(file, 'utf8'));
+      const highRisk = new Set();
+      for (const prdFile of projectPrds(paths.repoRoot, project.name)) {
+        for (const req of loadPrdIndex(prdFile, schemas).requirements) if (req.risk === 'high') highRisk.add(req.id);
+      }
+      const ids = (filter) => previous.filter(filter).map((r) => r.test_id).sort();
+      const pick = [
+        ids((r) => r.status === 'FAIL')[0],
+        ids((r) => r.status === 'PASS' && highRisk.has(loaded.cases.get(r.test_id)?.requirement))[0],
+        ids((r) => r.status === 'PASS')[0],
+      ].filter((id, i, all) => id && all.indexOf(id) === i);
+      const sink = evidenceSink(paths);
+      if (!pick.length) {
+        sink.write('web/rerun/comparison.json', []);
+        console.log(JSON.stringify({ rerun: [] }));
+        return 0;
+      }
+      const summary = await runWebTests({ repoRoot: paths.repoRoot, project, envName, tests: loaded.tests.filter((t) => pick.includes(t.test_id)), schemas, sink, runId, label: 'rerun', browsers });
+      const original = Object.fromEntries(previous.map((r) => [r.test_id, r.status]));
+      const comparison = summary.results.map((r) => ({ test_id: r.test_id, original: original[r.test_id], rerun: r.status, reproduced: r.status === original[r.test_id] }));
+      sink.write('web/rerun/comparison.json', comparison);
+      console.log(JSON.stringify({ rerun: comparison }));
+      return 0;
+    }
+    need(false, 'Usage: qa web validate|run|rerun|baseline --project <name> [--browsers chromium,firefox,webkit,mobile]');
   }
 
   if (command === 'stage') {

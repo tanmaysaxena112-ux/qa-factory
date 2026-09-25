@@ -33,7 +33,10 @@ const HELP = `qa: QA Factory command line
   qa cases validate --project <p>     Check cases: oracles, coverage, high-risk depth
   qa api validate --project <p>       Check every API test implements an approved case
   qa api run --project <p> [--env dev] [--plan f] [--only IDS] [--label L] [--out dir]
-  qa calibrate --project <p> [--env dev] [--out dir]
+  qa calibrate --project <p> [--surface api|web] [--env dev] [--out dir]
+  qa web validate --project <p>       Check every web test implements an approved case
+  qa web run --project <p> [--browsers chromium,firefox,webkit,mobile] [--plan f] [--out dir]
+  qa web baseline --project <p>       Create missing visual baselines for QA Lead review
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
   qa promote --step <id> --to <path>  Write approved agent output into the project
 
@@ -86,6 +89,8 @@ async function main(argv) {
       field: { type: 'string' },
       format: { type: 'string' },
       'merge-edge': { type: 'string' },
+      surface: { type: 'string' },
+      browsers: { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });

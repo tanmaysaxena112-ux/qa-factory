@@ -3,6 +3,7 @@ prd_id: PRD-CART
 project: demo-shop
 title: Shopping Cart
 status: approved
+surfaces: [api]
 ---
 
 # Shopping Cart
@@ -92,4 +93,5 @@ Edge cases:
 - 2026-09-25 draft by prd-author (run RUN-2026-0925-002).
 - 2026-09-25 critique by prd-critic: 14 issues (run RUN-2026-0925-002).
 - 2026-09-25 approved by claude-code on behalf of the QA Lead (github:tanmaysaxena112-ux). Decisions: catalogue order undefined; out-of-stock products listed; error body defined only by its "error" code; exceeding the 10-per-line limit by merging returns 400 invalid_quantity and is checked before stock; missing, empty or non-string product_id returns 400 invalid_body; malformed JSON returns 400 invalid_body; changing quantity means remove and re-add; one shared cart per server; concurrency out of scope; health endpoint out of scope; prices are whole cents so no rounding rule is needed.
-- 2026-09-25 edge cases EC-002.5, EC-002.6 and EC-004.2 added by claude-code on behalf of the QA Lead, answering three open questions from edge-case-hunter (run RUN-2026-0925-003). REQ-004 raised from low to medium risk because a remove that silently fails changes the amount a shopper would pay.
+- 2026-09-25 edge cases EC-002.5, EC-002.6 and EC-004.2 added by claude-code on behalf of the QA Lead, answering three open questions from edge-case-hunter (run RUN-2026-0925-003).
+- 2026-09-25 surfaces set to api by claude-code on behalf of the QA Lead; the web page has its own PRD, PRD-CART-UI. REQ-004 raised from low to medium risk because a remove that silently fails changes the amount a shopper would pay.

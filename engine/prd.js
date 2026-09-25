@@ -66,6 +66,7 @@ export function parsePrd(text) {
     project: meta.project,
     title: meta.title,
     status: meta.status,
+    ...(meta.surfaces ? { surfaces: meta.surfaces } : {}),
     requirements,
   };
 

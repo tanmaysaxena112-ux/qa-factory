@@ -9,15 +9,19 @@ import { listFiles, projectEnv } from './project.js';
 // Loads the project's API test specs and enforces the automation gate: every
 // test implements an approved case, on the API surface, with the same oracle.
 export function loadApiTests(project, schemas) {
+  return loadSurfaceTests(project, schemas, { surface: 'api', schemaId: 'qa.apitests.v1', dir: project.api?.tests ?? 'api/tests' });
+}
+
+export function loadSurfaceTests(project, schemas, { surface, schemaId, dir, extraProblems = () => [] }) {
   const problems = [];
   const cases = new Map();
   for (const file of listFiles(join(project.dir, 'cases'), /\.cases\.yaml$/)) {
     for (const c of YAML.parse(readFileSync(file, 'utf8')).cases ?? []) cases.set(c.id, c);
   }
   const tests = [];
-  for (const file of listFiles(join(project.dir, project.api?.tests ?? 'api/tests'), /\.json$/)) {
+  for (const file of listFiles(join(project.dir, dir), /\.json$/)) {
     const doc = JSON.parse(readFileSync(file, 'utf8'));
-    const check = schemas.validate('qa.apitests.v1', doc);
+    const check = schemas.validate(schemaId, doc);
     if (!check.ok) {
       problems.push(`${file}: ${check.errors.join('; ')}`);
       continue;
@@ -26,10 +30,11 @@ export function loadApiTests(project, schemas) {
       // Tests are literal data. Any placeholder syntax means the author guessed
       // at values instead of using the project's test data.
       if (JSON.stringify(t).includes('{{')) problems.push(`${t.test_id}: contains "{{" placeholder syntax; tests must use literal values`);
-      if (t.steps.some((s) => s.request.body !== undefined && s.request.raw_body !== undefined)) problems.push(`${t.test_id}: a step sets both body and raw_body`);
+      if (surface === 'api' && t.steps.some((s) => s.request.body !== undefined && s.request.raw_body !== undefined)) problems.push(`${t.test_id}: a step sets both body and raw_body`);
+      problems.push(...extraProblems(t));
       const c = cases.get(t.test_id);
       if (!c) problems.push(`${t.test_id}: no approved test case with this ID`);
-      else if (c.surface !== 'api') problems.push(`${t.test_id}: case surface is ${c.surface}, not api`);
+      else if (c.surface !== surface) problems.push(`${t.test_id}: case surface is ${c.surface}, not ${surface}`);
       else if (c.oracle.criterion !== t.oracle) problems.push(`${t.test_id}: oracle ${t.oracle} differs from the case's ${c.oracle.criterion}`);
       if (tests.some((x) => x.test_id === t.test_id)) problems.push(`${t.test_id}: defined twice`);
       tests.push(t);

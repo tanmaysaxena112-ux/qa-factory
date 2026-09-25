@@ -8,3 +8,4 @@ qa.sqlite-*
 .env.*
 !.env.example
 .DS_Store
+.qa-cache/
