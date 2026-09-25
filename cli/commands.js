@@ -154,7 +154,18 @@ export async function runCommand(command, rest, values) {
       const file = join(paths.evidence, runId, 'api', values.label ?? 'main', 'results.json');
       if (!existsSync(file)) throw new Error(`No results to re-run at ${relative(paths.dataRoot, file)}`);
       const previous = JSON.parse(readFileSync(file, 'utf8'));
-      const pick = ['PASS', 'FAIL'].map((s) => previous.filter((r) => r.status === s).map((r) => r.test_id).sort()[0]).filter(Boolean);
+      // One failing test, one passing test and one passing test of a high-risk
+      // requirement, so a clean run still re-proves the riskiest behaviour.
+      const highRisk = new Set();
+      for (const prdFile of projectPrds(paths.repoRoot, project.name)) {
+        for (const req of loadPrdIndex(prdFile, schemas).requirements) if (req.risk === 'high') highRisk.add(req.id);
+      }
+      const ids = (filter) => previous.filter(filter).map((r) => r.test_id).sort();
+      const pick = [
+        ids((r) => r.status === 'FAIL')[0],
+        ids((r) => r.status === 'PASS' && highRisk.has(loaded.cases.get(r.test_id)?.requirement))[0],
+        ids((r) => r.status === 'PASS')[0],
+      ].filter((id, i, all) => id && all.indexOf(id) === i);
       if (!pick.length) {
         evidenceSink(paths).write('api/rerun/comparison.json', []);
         console.log(JSON.stringify({ rerun: [], note: 'no passing or failing tests to re-run' }));

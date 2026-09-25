@@ -74,6 +74,22 @@ max_cost_usd: 2
 | `qa approve <run-id> [--reason]`, `qa reject <run-id> --reason` | QA Lead decision |
 | `qa halt`, `qa unhalt`, `qa resume <run-id>` | Platform stop switch |
 | `qa evidence verify <run-id>` | Check sealed evidence |
+| `qa prd validate --project <p>`, `qa prd index --file <f>` | PRD standard and machine index |
+| `qa cases validate --project <p>` | Oracles, coverage on every surface, high-risk depth |
+| `qa api validate`, `qa api run`, `qa api rerun` | API tests: automation gate, execution, spot re-execution |
+| `qa calibrate --project <p>` | Healthy build passes, every seeded fault caught, wrong build blocks |
+| `qa stage --to <folder> <path>...` | Stage exactly the files a contained agent may see |
+| `qa promote --step <id> --to <path>` | Write approved agent output into the project, only after a QA Lead approval |
+
+## Phase 1 workflows
+
+| Workflow | Stages |
+|---|---|
+| `prd` | Stage intake, PRD Author, stage, PRD Critic, QA Lead, promote, validate |
+| `design-cases` | Validate PRD, Test Designer, Edge Case Hunter, QA Lead, promote merged cases, coverage check |
+| `automate` | Validate cases, Automation agent, QA Lead, promote, automation gate, calibration |
+| `api-regression` | Planner, execution, re-execution, triage and blind review in parallel, Reporter, QA Lead |
+| `calibrate` | Re-certify a suite without agents |
 
 | Exit code | Meaning |
 |---|---|

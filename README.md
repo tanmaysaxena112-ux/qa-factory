@@ -44,7 +44,20 @@ npm run qa -- evidence verify RUN-YYYY-MMDD-001
 
 ## Status
 
-Phase 0, the foundation, is complete: engine, contracts, containment, hooks, evidence sealing and health checks. Next: the API lane end to end on a public demo application.
+Phases 0 and 1 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
+
+| Stage | What happened |
+|---|---|
+| PRD | The PRD Author drafted 4 requirements; the independent PRD Critic raised 14 issues; all were answered before approval |
+| Test design | 28 cases from the Test Designer; the Edge Case Hunter added 6 and raised 3 open questions instead of guessing |
+| Automation | First attempt rejected at the gate (invented placeholder syntax); rework produced 34 literal tests |
+| Calibration | Failed closed on the first build: 4 tests exposed a real defect (unvalidated `product_id`) |
+| Regression | Triage filed 4 findings in one root-cause cluster; the blind reviewer (Opus 5.5) rejected the release |
+| After the fix | 34/34 pass, 16/16 criteria met, all 7 seeded faults caught; released with named risks |
+
+Every step's evidence is sealed per run. Decisions made during development are recorded as made by Claude on behalf of the QA Lead, never as the QA Lead.
+
+Next: the web lane (Playwright, visual, accessibility, cross-browser).
 
 ## Documentation
 

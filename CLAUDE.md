@@ -49,10 +49,13 @@ Rules that code can enforce live in code: hooks in `.claude/hooks/`, validators 
 ## Commands
 
 ```bash
-npm test                      # full test suite
-npm run qa -- doctor          # health check; must pass before any run
-npm run qa -- run <workflow>  # start a run
-npm run qa -- approve <run>   # QA Lead decision
+npm test                                   # full test suite
+npm run qa -- doctor                       # health check; must pass before any run
+npm run qa -- run <workflow> --param k=v   # prd, design-cases, automate, api-regression, calibrate
+npm run qa -- approve <run>                # QA Lead decision
+npm run qa -- prd validate --project <p>   # PRD standard
+npm run qa -- cases validate --project <p> # oracles and coverage
+npm run qa -- api validate --project <p>   # every test implements an approved case
 ```
 
 Full reference: `docs/engine.md`.

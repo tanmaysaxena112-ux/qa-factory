@@ -1,0 +1,16 @@
+schema: qa.workflow.v1
+name: calibrate
+description: >
+  Re-certifies a project's API suite: it must pass the healthy build, catch every
+  seeded fault with a test that passed the healthy build, and block on a wrong
+  build identity. Deterministic; no agents.
+params:
+  project: { required: true, description: Project folder name }
+  env: { default: dev, description: dev or uat }
+steps:
+  - id: validate
+    run: qa api validate --project ${params.project}
+  - id: calibrate
+    needs: [validate]
+    run: qa calibrate --project ${params.project} --env ${params.env}
+    timeout_seconds: 900
