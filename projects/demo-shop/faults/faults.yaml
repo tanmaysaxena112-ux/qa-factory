@@ -30,3 +30,15 @@ faults:
   - id: ui-layout-shift
     surface: web
     description: The product and cart columns swap widths
+  - id: ui-tiny-targets
+    surface: mobile
+    description: Buttons shrink below a comfortable touch size
+  - id: ui-text-keypad
+    surface: mobile
+    description: Quantity fields open the text keyboard instead of the number pad
+  - id: ui-currency
+    surface: mobile
+    description: Money is shown as "14.97 USD" instead of "$14.97"
+  - id: ui-total-stale
+    surface: mobile
+    description: The page removes a line but does not refresh the total

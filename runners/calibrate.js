@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import YAML from 'yaml';
 import { runApiTests } from './api.js';
+import { runMobileTests } from './mobile.js';
 import { runWebTests } from './web.js';
 
 export const FAULT_DETECTION_TARGET = 0.99;
@@ -10,7 +11,7 @@ export const FAULT_DETECTION_TARGET = 0.99;
 // every seeded fault is caught, and a wrong build identity blocks the run
 // instead of producing results.
 export async function calibrate({ repoRoot, project, envName, tests, schemas, sink, runId, surface = 'api', browsers }) {
-  const runSuite = surface === 'web' ? (args) => runWebTests({ ...args, browsers }) : runApiTests;
+  const runSuite = { web: (args) => runWebTests({ ...args, browsers }), mobile: runMobileTests, api: runApiTests }[surface];
   const env = project.envs[envName];
   const faultEnv = env.local_app?.fault_env;
   if (!faultEnv) throw new Error(`Environment ${envName} has no local_app.fault_env; calibration needs a way to inject faults`);

@@ -1,0 +1,80 @@
+schema: qa.workflow.v1
+name: mobile-regression
+description: >
+  Plan, execution in real Android Chrome, re-execution, triage and blind review
+  in parallel, report and the QA Lead's release decision for mobile tests.
+max_cost_usd: 8
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: PRD the release is judged against }
+  env: { default: dev, description: dev or uat }
+steps:
+  - id: check-tests
+    run: qa mobile validate --project ${params.project}
+
+  - id: stage-plan
+    needs: [check-tests]
+    run: qa stage --to plan projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases projects/${params.project}/mobile/tests
+
+  - id: plan
+    needs: [stage-plan]
+    agent: planner
+    cwd: ${run.dir}/staged/plan
+    prompt: |
+      Plan a full regression of the mobile tests of project ${params.project} on environment ${params.env}. INDEX.txt lists every file.
+    output: qa.testplan.v1
+    timeout_seconds: 600
+
+  - id: execute
+    needs: [plan]
+    run: qa mobile run --project ${params.project} --env ${params.env} --plan ${run.dir}/steps/plan/output.json
+    timeout_seconds: 1800
+
+  - id: rerun
+    needs: [execute]
+    run: qa mobile rerun --project ${params.project} --env ${params.env}
+    timeout_seconds: 1200
+
+  - id: stage-triage
+    needs: [rerun]
+    run: qa stage --to triage run:mobile/main projects/${params.project}/prd/${params.prd_id}.md
+
+  - id: triage
+    needs: [stage-triage]
+    agent: bug-investigator
+    cwd: ${run.dir}/staged/triage
+    prompt: |
+      Triage run ${run.id}. Results are in mobile/main/results.json with one detail file per test listing each step and a device screenshot. INDEX.txt lists every file.
+    output: qa.triage.v1
+    timeout_seconds: 900
+
+  - id: stage-review
+    needs: [rerun]
+    run: qa stage --to review run:mobile/main run:mobile/rerun projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases
+
+  - id: review
+    needs: [stage-review]
+    agent: blind-reviewer
+    cwd: ${run.dir}/staged/review
+    prompt: |
+      Review run ${run.id} against ${params.prd_id}. Results: mobile/main/results.json. Re-execution: mobile/rerun/comparison.json. Each test has a device screenshot under mobile/main/screens; read the ones you need. INDEX.txt lists every file.
+    output: qa.review.v1
+    timeout_seconds: 1500
+
+  - id: stage-report
+    needs: [triage, review]
+    run: qa stage --to report run:mobile/main/results.json run:mobile/rerun/comparison.json run:steps/review/output.json run:steps/triage/output.json projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases
+
+  - id: report
+    needs: [stage-report]
+    agent: reporter
+    cwd: ${run.dir}/staged/report
+    prompt: |
+      Report on run ${run.id}. Results: mobile/main/results.json. Re-execution: mobile/rerun/comparison.json. The reviewer's verdict is steps/review/output.json and the triage is steps/triage/output.json. INDEX.txt lists every file.
+    output: qa.report.v1
+    timeout_seconds: 600
+
+  - id: qa-lead
+    needs: [report]
+    gate: qa-lead
+    message: Release decision. Read the report, the blind review and the findings.

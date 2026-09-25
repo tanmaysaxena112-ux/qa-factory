@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.mobiletests.v1",
+  "title": "Declarative mobile tests, interpreted step by step on a real Android device or emulator through Appium. Data only, no scripts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project", "tests"],
+  "properties": {
+    "schema": { "const": "qa.mobiletests.v1" },
+    "project": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "tests": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/test" } }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 2,
+      "properties": {
+        "role": { "type": "string", "enum": ["button", "heading", "alert", "region"] },
+        "name": { "type": "string" },
+        "label": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "goto", "tap", "fill", "rotate", "request",
+            "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_value", "expect_enabled", "expect_disabled",
+            "expect_attribute", "expect_min_size", "expect_stacked", "expect_side_by_side"
+          ]
+        },
+        "target": { "$ref": "#/$defs/target" },
+        "second": { "$ref": "#/$defs/target" },
+        "path": { "type": "string", "pattern": "^/" },
+        "value": { "type": "string" },
+        "attribute": { "type": "string", "enum": ["type", "inputmode", "aria-label", "disabled"] },
+        "orientation": { "type": "string", "enum": ["portrait", "landscape"] },
+        "width": { "type": "integer", "minimum": 1, "maximum": 400 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 400 },
+        "method": { "type": "string", "enum": ["GET", "POST", "DELETE"] },
+        "body": {}
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_id", "oracle", "title", "steps"],
+      "properties": {
+        "test_id": { "type": "string", "pattern": "^MOB-[A-Z0-9]+-[0-9]{2,}$" },
+        "oracle": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      }
+    }
+  }
+}

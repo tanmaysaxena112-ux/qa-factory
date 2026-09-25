@@ -1,0 +1,44 @@
+schema: qa.workflow.v1
+name: automate-mobile
+description: >
+  Approved mobile cases to declarative tests run in real Chrome on Android
+  through Appium. The QA Lead reviews the tests before they are written into
+  the project and calibrated against the mobile seeded faults.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: PRD whose mobile cases are automated }
+steps:
+  - id: check-cases
+    run: qa cases validate --project ${params.project}
+
+  - id: stage
+    needs: [check-cases]
+    run: qa stage --to automate projects/${params.project}/cases/${params.prd_id}.cases.yaml projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/project.yml projects/${params.project}/knowledge/testdata.yaml
+
+  - id: automate
+    needs: [stage]
+    agent: automation-mobile
+    cwd: ${run.dir}/staged/automate
+    prompt: |
+      Implement every MOB case of ${params.prd_id} for project ${params.project}. INDEX.txt lists every file in your working folder.
+    output: qa.mobiletests.v1
+    timeout_seconds: 1500
+
+  - id: qa-lead
+    needs: [automate]
+    gate: qa-lead
+    message: Review the generated mobile tests against their cases.
+
+  - id: promote
+    needs: [qa-lead]
+    run: qa promote --step automate --to projects/${params.project}/mobile/tests/${params.prd_id}.json
+
+  - id: validate
+    needs: [promote]
+    run: qa mobile validate --project ${params.project}
+
+  - id: calibrate
+    needs: [validate]
+    run: qa calibrate --project ${params.project} --surface mobile
+    timeout_seconds: 2400

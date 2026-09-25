@@ -10,6 +10,7 @@ import { loadSchemas } from '../engine/schemas.js';
 import { openStore } from '../engine/store.js';
 import { loadApiTests, runApiTests } from '../runners/api.js';
 import { BROWSERS, loadWebTests, runWebTests } from '../runners/web.js';
+import { loadMobileTests, runMobileTests } from '../runners/mobile.js';
 import { calibrate } from '../runners/calibrate.js';
 import { loadProject } from '../runners/project.js';
 
@@ -212,8 +213,8 @@ export async function runCommand(command, rest, values) {
   if (command === 'calibrate') {
     const project = loadProject(paths.repoRoot, need(values.project, 'Usage: qa calibrate --project <name> [--surface api|web]'));
     const surface = values.surface ?? 'api';
-    if (!['api', 'web'].includes(surface)) throw new Error(`Unknown surface "${surface}"`);
-    const loaded = surface === 'web' ? loadWebTests(project, schemas) : loadApiTests(project, schemas);
+    if (!['api', 'web', 'mobile'].includes(surface)) throw new Error(`Unknown surface "${surface}"`);
+    const loaded = { api: loadApiTests, web: loadWebTests, mobile: loadMobileTests }[surface](project, schemas);
     if (loaded.problems.length) {
       console.error(`Automation gate failed:\n  ${loaded.problems.join('\n  ')}`);
       return FAILED;
@@ -295,6 +296,71 @@ export async function runCommand(command, rest, values) {
       return 0;
     }
     need(false, 'Usage: qa web validate|run|rerun|baseline --project <name> [--browsers chromium,firefox,webkit,mobile]');
+  }
+
+  if (command === 'mobile') {
+    const [sub] = rest;
+    const project = loadProject(paths.repoRoot, need(values.project, `Usage: qa mobile ${sub ?? 'run'} --project <name>`));
+    const loaded = loadMobileTests(project, schemas);
+    if (sub === 'validate') {
+      console.log(loaded.problems.length ? `INVALID\n  ${loaded.problems.join('\n  ')}` : `valid    ${loaded.tests.length} mobile tests, each implementing an approved case`);
+      return loaded.problems.length ? FAILED : 0;
+    }
+    if (loaded.problems.length) {
+      console.error(`Automation gate failed:\n  ${loaded.problems.join('\n  ')}`);
+      return FAILED;
+    }
+    const envName = values.env ?? 'dev';
+    if (sub === 'run') {
+      let tests = loaded.tests;
+      if (values.plan) {
+        const plan = JSON.parse(readFileSync(values.plan, 'utf8'));
+        const check = schemas.validate('qa.testplan.v1', plan);
+        if (!check.ok) throw new Error(`Plan breaks qa.testplan.v1: ${check.errors.join('; ')}`);
+        const wanted = new Set(plan.tests.filter((t) => t.surface === 'mobile').map((t) => t.test_id));
+        tests = tests.filter((t) => wanted.has(t.test_id));
+      }
+      if (values.only) {
+        const wanted = new Set(values.only.split(','));
+        tests = tests.filter((t) => wanted.has(t.test_id));
+      }
+      if (!tests.length) throw new Error('No mobile tests selected');
+      const sink = evidenceSink(paths, values.out);
+      const summary = await runMobileTests({ repoRoot: paths.repoRoot, project, envName, tests, schemas, sink, runId: sink.runId, label: values.label ?? 'main' });
+      const { results, ...counts } = summary;
+      console.log(JSON.stringify(counts));
+      return 0;
+    }
+    if (sub === 'rerun') {
+      const runId = need(process.env.QA_RUN_ID, 'qa mobile rerun only runs inside a workflow run');
+      const file = join(paths.evidence, runId, 'mobile', values.label ?? 'main', 'results.json');
+      if (!existsSync(file)) throw new Error(`No mobile results to re-run at ${relative(paths.dataRoot, file)}`);
+      const previous = JSON.parse(readFileSync(file, 'utf8'));
+      const highRisk = new Set();
+      for (const prdFile of projectPrds(paths.repoRoot, project.name)) {
+        const prd = loadPrdIndex(prdFile, schemas);
+        for (const req of prd.requirements) if (req.risk === 'high') highRisk.add(`${prd.prd_id}:${req.id}`);
+      }
+      const ids = (filter) => previous.filter(filter).map((r) => r.test_id).sort();
+      const pick = [
+        ids((r) => r.status === 'FAIL')[0],
+        ids((r) => r.status === 'PASS' && highRisk.has(`${loaded.cases.get(r.test_id)?.prd_id}:${loaded.cases.get(r.test_id)?.requirement}`))[0],
+        ids((r) => r.status === 'PASS')[0],
+      ].filter((id, i, all) => id && all.indexOf(id) === i);
+      const sink = evidenceSink(paths);
+      if (!pick.length) {
+        sink.write('mobile/rerun/comparison.json', []);
+        console.log(JSON.stringify({ rerun: [] }));
+        return 0;
+      }
+      const summary = await runMobileTests({ repoRoot: paths.repoRoot, project, envName, tests: loaded.tests.filter((t) => pick.includes(t.test_id)), schemas, sink, runId, label: 'rerun' });
+      const original = Object.fromEntries(previous.map((r) => [r.test_id, r.status]));
+      const comparison = summary.results.map((r) => ({ test_id: r.test_id, original: original[r.test_id], rerun: r.status, reproduced: r.status === original[r.test_id] }));
+      sink.write('mobile/rerun/comparison.json', comparison);
+      console.log(JSON.stringify({ rerun: comparison }));
+      return 0;
+    }
+    need(false, 'Usage: qa mobile validate|run|rerun --project <name>');
   }
 
   if (command === 'stage') {

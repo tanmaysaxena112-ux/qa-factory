@@ -29,7 +29,7 @@ function renderProducts() {
         <span class="name">${p.name}</span>
         <span class="muted">${money(p.price)} · ${p.stock} in stock</span>
         ${FAULT === 'ui-no-label' ? '' : `<label class="muted" for="${inputId}">Quantity for ${p.name}</label>`}
-        <input id="${inputId}" type="number" min="1" max="10" value="1">
+        <input id="${inputId}" type="${FAULT === 'ui-text-keypad' ? 'text' : 'number'}" inputmode="${FAULT === 'ui-text-keypad' ? 'text' : 'numeric'}" min="1" max="10" value="1">
         <button type="button">${p.stock === 0 ? 'Out of stock' : `Add ${p.name} to cart`}</button>`;
       const button = li.querySelector('button');
       button.disabled = p.stock === 0;
@@ -81,6 +81,11 @@ async function remove(productId) {
 async function start() {
   products = await (await fetch('/products')).json();
   if (FAULT === 'ui-layout-shift') document.querySelector('main').style.gridTemplateColumns = '1fr 2fr';
+  if (FAULT === 'ui-tiny-targets') {
+    const style = document.createElement('style');
+    style.textContent = 'button { padding: 0 2px; font-size: 9px; line-height: 1; }';
+    document.head.append(style);
+  }
   renderProducts();
   await renderCart();
 }

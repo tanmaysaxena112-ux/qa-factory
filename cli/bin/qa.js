@@ -37,6 +37,8 @@ const HELP = `qa: QA Factory command line
   qa web validate --project <p>       Check every web test implements an approved case
   qa web run --project <p> [--browsers chromium,firefox,webkit,mobile] [--plan f] [--out dir]
   qa web baseline --project <p>       Create missing visual baselines for QA Lead review
+  qa mobile validate --project <p>    Check every mobile test implements an approved case
+  qa mobile run --project <p> [--plan f] [--only IDS] [--out dir]   Real Android Chrome via Appium
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
   qa promote --step <id> --to <path>  Write approved agent output into the project
 
