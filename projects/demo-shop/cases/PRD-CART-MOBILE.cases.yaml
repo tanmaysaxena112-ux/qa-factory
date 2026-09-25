@@ -818,11 +818,6 @@ cases:
         shows "That item is not in your cart."'
     surface: mobile
     technique: failure_path
-    manual:
-      reason: Producing a cart line that is removed out-of-band before the shopper's
-        own remove action requires test-only backend manipulation, outside
-        normal mobile UI interaction and not confirmed available in this staged
-        environment.
     steps:
       - Add Product A to the cart so its line and "Remove Product A" button are
         shown.

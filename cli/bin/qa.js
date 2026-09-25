@@ -36,9 +36,10 @@ const HELP = `qa: QA Factory command line
   qa calibrate --project <p> [--surface api|web] [--env dev] [--out dir]
   qa web validate --project <p>       Check every web test implements an approved case
   qa web run --project <p> [--browsers chromium,firefox,webkit,mobile] [--plan f] [--out dir]
-  qa web baseline --project <p>       Create missing visual baselines for QA Lead review
+  qa web baseline --project <p> [--update]   Create missing (or, with --update, rewrite changed) baselines for review
   qa mobile validate --project <p>    Check every mobile test implements an approved case
   qa mobile run --project <p> [--plan f] [--only IDS] [--out dir]   Real Android Chrome via Appium
+  qa report verify --surface <s>      Fail the run if the report's counts differ from the results
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
   qa promote --step <id> --to <path>  Write approved agent output into the project
 
@@ -93,6 +94,7 @@ async function main(argv) {
       'merge-edge': { type: 'string' },
       surface: { type: 'string' },
       browsers: { type: 'string' },
+      update: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });

@@ -197,13 +197,13 @@ const EXPECT_TIMEOUT_MS = 5000;
 
 // Assertions retry until they hold or the timeout passes, because the page
 // updates asynchronously after every tap.
-async function eventually(check) {
+async function eventually(check, observe) {
   const deadline = Date.now() + EXPECT_TIMEOUT_MS;
   let last = 'condition not met';
   while (Date.now() < deadline) {
     try {
       const outcome = await check();
-      if (outcome === true) return;
+      if (outcome === true) return observe ? observe() : undefined;
       last = outcome;
     } catch (e) {
       last = e.message;
@@ -259,16 +259,20 @@ async function runStep(session, step, ctx) {
       if (!res.ok) throw new Error(`${step.method} ${step.path} returned ${res.status}`);
       return undefined;
     }
-    case 'expect_text':
+    case 'expect_text': {
+      let got;
       return eventually(async () => {
-        const got = (await session.text(await one(session, t))).trim();
+        got = (await session.text(await one(session, t))).trim();
         return got === step.value || `text is ${JSON.stringify(got)}, expected ${JSON.stringify(step.value)}`;
-      });
-    case 'expect_contains':
+      }, () => ({ text: got }));
+    }
+    case 'expect_contains': {
+      let got;
       return eventually(async () => {
-        const got = await session.text(await one(session, t));
+        got = await session.text(await one(session, t));
         return got.includes(step.value) || `text does not contain ${JSON.stringify(step.value)}`;
-      });
+      }, () => ({ text: got.slice(0, 500) }));
+    }
     case 'expect_visible':
       return eventually(async () => (await session.displayed(await one(session, t))) || `${JSON.stringify(t)} is not visible`);
     case 'expect_hidden':
@@ -277,25 +281,31 @@ async function runStep(session, step, ctx) {
         for (const el of found) if (await session.displayed(el)) return `${JSON.stringify(t)} is still visible`;
         return true;
       });
-    case 'expect_value':
+    case 'expect_value': {
+      let got;
       return eventually(async () => {
-        const got = await session.property(await one(session, t), 'value');
+        got = await session.property(await one(session, t), 'value');
         return got === step.value || `value is ${JSON.stringify(got)}, expected ${JSON.stringify(step.value)}`;
-      });
+      }, () => ({ value: got }));
+    }
     case 'expect_enabled':
       return eventually(async () => (await session.enabled(await one(session, t))) || `${JSON.stringify(t)} is disabled`);
     case 'expect_disabled':
       return eventually(async () => !(await session.enabled(await one(session, t))) || `${JSON.stringify(t)} is enabled`);
-    case 'expect_attribute':
+    case 'expect_attribute': {
+      let got;
       return eventually(async () => {
-        const got = await session.attribute(await one(session, t), step.attribute);
+        got = await session.attribute(await one(session, t), step.attribute);
         return got === step.value || `${step.attribute} is ${JSON.stringify(got)}, expected ${JSON.stringify(step.value)}`;
-      });
-    case 'expect_min_size':
+      }, () => ({ [step.attribute]: got }));
+    }
+    case 'expect_min_size': {
+      let r;
       return eventually(async () => {
-        const r = await session.rect(await one(session, t));
+        r = await session.rect(await one(session, t));
         return (r.width >= step.width && r.height >= step.height) || `size is ${r.width}x${r.height} CSS px, expected at least ${step.width}x${step.height}`;
-      });
+      }, () => ({ width: r.width, height: r.height }));
+    }
     case 'expect_stacked':
       return eventually(async () => {
         const a = await session.rect(await one(session, t));
@@ -308,12 +318,14 @@ async function runStep(session, step, ctx) {
         const b = await session.rect(await one(session, step.second));
         return (b.x >= a.x + a.width - 1 && b.y < a.y + a.height) || 'second element is not beside the first';
       });
-    case 'expect_no_horizontal_scroll':
+    case 'expect_no_horizontal_scroll': {
       // The page is no wider than the screen, so it cannot scroll sideways.
+      let m;
       return eventually(async () => {
-        const { scroll, view } = await session.execute('return { scroll: document.documentElement.scrollWidth, view: window.innerWidth };');
-        return scroll <= view || `page is ${scroll} CSS px wide on a ${view} CSS px screen`;
-      });
+        m = await session.execute('return { scroll: document.documentElement.scrollWidth, view: window.innerWidth };');
+        return m.scroll <= m.view || `page is ${m.scroll} CSS px wide on a ${m.view} CSS px screen`;
+      }, () => ({ page_width: m.scroll, screen_width: m.view }));
+    }
     default: throw new Error(`Unknown action ${step.action}`);
   }
 }
@@ -371,11 +383,11 @@ export async function runMobileTests({ repoRoot, project, envName, tests, schema
       for (const [i, step] of test.steps.entries()) {
         const began = Date.now();
         try {
-          await runStep(session, step, ctx);
-          steps.push({ n: i + 1, action: step.action, ok: true, ms: Date.now() - began });
+          const observed = await runStep(session, step, ctx);
+          steps.push({ n: i + 1, action: step.action, target: step.target, ...(step.target ? { locator: targetXPath(step.target) } : {}), ok: true, ...(observed && typeof observed === 'object' ? { observed } : {}), ms: Date.now() - began });
         } catch (e) {
           failure = e.message;
-          steps.push({ n: i + 1, action: step.action, ok: false, error: e.message, ms: Date.now() - began });
+          steps.push({ n: i + 1, action: step.action, target: step.target, ...(step.target ? { locator: targetXPath(step.target) } : {}), ok: false, error: e.message, ms: Date.now() - began });
           break;
         }
       }

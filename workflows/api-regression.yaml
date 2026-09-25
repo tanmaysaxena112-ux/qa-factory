@@ -75,7 +75,11 @@ steps:
     output: qa.report.v1
     timeout_seconds: 600
 
-  - id: qa-lead
+  - id: verify-report
     needs: [report]
+    run: qa report verify --surface api
+
+  - id: qa-lead
+    needs: [verify-report]
     gate: qa-lead
     message: Release decision. Read the report, the blind review and the findings.

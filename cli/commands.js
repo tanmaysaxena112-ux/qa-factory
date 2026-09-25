@@ -260,7 +260,10 @@ export async function runCommand(command, rest, values) {
       // a person reviews the images before they are committed.
       const summary = await runWebTests({
         repoRoot: paths.repoRoot, project, envName, tests, schemas, sink, runId: sink.runId, browsers,
-        label: sub === 'baseline' ? 'baseline' : values.label ?? 'main', updateSnapshots: sub === 'baseline' ? 'missing' : 'none',
+        label: sub === 'baseline' ? 'baseline' : values.label ?? 'main',
+        // --update rewrites changed baselines for an intended visual change; the
+        // QA Lead reviews the image diff in git before it is committed.
+        updateSnapshots: sub === 'baseline' ? (values.update ? 'changed' : 'missing') : 'none',
       });
       const { results, ...counts } = summary;
       console.log(JSON.stringify(counts));
@@ -361,6 +364,33 @@ export async function runCommand(command, rest, values) {
       return 0;
     }
     need(false, 'Usage: qa mobile validate|run|rerun --project <name>');
+  }
+
+  if (command === 'report') {
+    // The Reporter writes prose; its counts are facts and must equal the
+    // results file exactly, or the run fails.
+    const [sub] = rest;
+    if (sub !== 'verify') need(false, 'Usage: qa report verify --surface api|web|mobile [--step report]');
+    const runId = need(process.env.QA_RUN_ID, 'qa report verify only runs inside a workflow run');
+    const surface = need(values.surface, 'Name the --surface');
+    const runDir = join(paths.evidence, runId);
+    const results = JSON.parse(readFileSync(join(runDir, surface, 'main', 'results.json'), 'utf8'));
+    const comparisonFile = join(runDir, surface, 'rerun', 'comparison.json');
+    const comparison = existsSync(comparisonFile) ? JSON.parse(readFileSync(comparisonFile, 'utf8')) : [];
+    const flaky = new Set(comparison.filter((c) => c.original === 'FAIL' && c.rerun === 'PASS').map((c) => c.test_id));
+    const count = (s) => results.filter((r) => r.status === s && !flaky.has(r.test_id)).length;
+    const expected = { pass: count('PASS'), fail: count('FAIL'), blocked: count('BLOCKED'), not_run: count('NOT_RUN'), flaky: flaky.size };
+    const store = openStore(paths.db);
+    try {
+      const report = store.getStep(runId, values.step ?? 'report')?.output?.value;
+      if (!report) throw new Error('No completed report step to verify');
+      const wrong = Object.entries(expected).filter(([k, v]) => report.counts[k] !== v).map(([k, v]) => `${k}: report says ${report.counts[k]}, results say ${v}`);
+      console.log(JSON.stringify({ expected, reported: report.counts, ok: wrong.length === 0 }));
+      if (wrong.length) console.error(`Report counts disagree with the results:\n  ${wrong.join('\n  ')}`);
+      return wrong.length ? FAILED : 0;
+    } finally {
+      store.close();
+    }
   }
 
   if (command === 'stage') {

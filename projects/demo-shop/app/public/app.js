@@ -83,7 +83,7 @@ async function start() {
   if (FAULT === 'ui-layout-shift') document.querySelector('main').style.gridTemplateColumns = '1fr 2fr';
   if (FAULT === 'ui-tiny-targets') {
     const style = document.createElement('style');
-    style.textContent = 'button { padding: 0 2px; font-size: 9px; line-height: 1; }';
+    style.textContent = 'button, input { min-height: 0; padding: 0 2px; font-size: 9px; line-height: 1; }';
     document.head.append(style);
   }
   renderProducts();
