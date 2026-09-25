@@ -1,0 +1,943 @@
+cases:
+  - id: MOB-CART-01
+    title: Portrait layout shows Products above Cart in one column
+    requirement: REQ-001
+    criteria:
+      - AC-001.1
+    oracle:
+      criterion: AC-001.1
+      expected: Held upright, the page shows the "Products" section above the "Cart"
+        section in a single column.
+    surface: mobile
+    technique: happy_path
+    preconditions:
+      - Android 15, Chrome 149, Pixel 8-class emulator, device held upright
+        (portrait).
+      - Server reset via GET /__reset before loading the page.
+    steps:
+      - Load the Demo Shop site root in Chrome while the device is upright.
+      - Observe the vertical order of the two sections on screen.
+      - Confirm the "Products" heading and its content appear above the "Cart"
+        heading and its content, with no side-by-side layout.
+    source: test_designer
+  - id: MOB-CART-02
+    title: Portrait layout never scrolls sideways
+    requirement: REQ-001
+    criteria:
+      - AC-001.2
+    oracle:
+      criterion: AC-001.2
+      expected: "Held upright, the page never scrolls sideways: no element is wider
+        than the screen."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Android 15, Chrome 149, Pixel 8-class emulator, device upright
+        (portrait).
+    steps:
+      - Load the Demo Shop page while the device is upright.
+      - Try to swipe the page horizontally.
+      - Using Chrome DevTools remote inspection, record the document width and
+        compare it to the viewport width.
+      - Confirm the page does not move sideways and no element's bounding box
+        extends past the right edge of the viewport.
+    source: test_designer
+  - id: MOB-CART-03
+    title: Landscape layout follows the 700px breakpoint and never scrolls sideways
+    requirement: REQ-002
+    criteria:
+      - AC-002.1
+    oracle:
+      criterion: AC-002.1
+      expected: "Held sideways, the page never scrolls sideways, and the sections
+        follow PRD-CART-UI AC-007.2: side by side when the page is wider than
+        700 CSS pixels, otherwise stacked."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Android 15, Chrome 149, Pixel 8-class emulator, device rotated to
+        landscape.
+    steps:
+      - Rotate the emulator to landscape and load the Demo Shop page.
+      - Using Chrome DevTools, record the CSS viewport width.
+      - Try to swipe the page horizontally; confirm it does not move sideways
+        and no element exceeds the viewport width.
+      - If the recorded width is above 700 CSS pixels, confirm the Products and
+        Cart sections sit side by side; if 700 or below, confirm they are
+        stacked in one column, per PRD-CART-UI AC-007.2.
+    source: test_designer
+  - id: MOB-CART-04
+    title: Adding a product completes correctly in landscape
+    requirement: REQ-002
+    criteria:
+      - AC-002.2
+    oracle:
+      criterion: AC-002.2
+      expected: Held sideways, adding a product (PRD-CART-UI AC-003.4) completes with
+        the same result as upright.
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Server reset via GET /__reset.
+      - Device rotated to landscape.
+      - Catalogue has a product with stock > 0, referred to as Product A.
+    steps:
+      - With the device in landscape, load the Demo Shop page.
+      - Set Product A's quantity field to 3.
+      - Tap "Add Product A to cart".
+      - Confirm the cart shows a line "Product A × 3" with the correct line
+        total, matching the result PRD-CART-UI AC-003.4 defines for the same
+        action upright.
+    source: test_designer
+  - id: MOB-CART-05
+    title: Removing a line completes correctly in landscape
+    requirement: REQ-002
+    criteria:
+      - AC-002.2
+    oracle:
+      criterion: AC-002.2
+      expected: Held sideways, removing a line (PRD-CART-UI AC-004.2) completes with
+        the same result as upright.
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Device in landscape.
+      - Cart already contains a line for Product A (added beforehand).
+    steps:
+      - With the device in landscape and a Product A line in the cart, tap
+        "Remove Product A".
+      - Confirm the line is removed from the cart, matching the result
+        PRD-CART-UI AC-004.2 defines for the same action upright.
+    source: test_designer
+  - id: MOB-CART-06
+    title: Rotating the device preserves cart, unsent quantity and shown message
+    requirement: REQ-002
+    criteria:
+      - EC-002.1
+    oracle:
+      criterion: EC-002.1
+      expected: Rotating does not reload the page; the cart, an entered but unsent
+        quantity and a shown message stay as they were.
+    surface: mobile
+    technique: state_transition
+    preconditions:
+      - Server reset via GET /__reset.
+      - Device starts in portrait.
+      - Catalogue includes Product A (stock > 0) and Product C (low stock, e.g.
+        3).
+    steps:
+      - In portrait, add Product A to the cart with quantity 2 (a successful
+        add).
+      - Set Product A's quantity field to 11 and tap Add again to trigger the
+        message "Quantity must be a whole number from 1 to 10."
+      - Type "4" into Product C's quantity field without tapping its Add button
+        (an unsent quantity).
+      - Rotate the device to landscape.
+      - Confirm the cart still shows the Product A line from step 1 unchanged,
+        the failure message from step 2 is still shown, Product C's field still
+        shows "4", and the page did not reload.
+    source: test_designer
+  - id: MOB-CART-07
+    title: Quantity field is at least 48x48dp in portrait
+    requirement: REQ-003
+    criteria:
+      - AC-003.1
+    oracle:
+      criterion: AC-003.1
+      expected: Every quantity field is at least 48 by 48 density-independent pixels,
+        upright.
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Device upright (portrait).
+      - Per EC-003.1, on Android Chrome 1 CSS pixel equals 1 density-independent
+        pixel, so sizes are measured in CSS pixels.
+      - Catalogue includes Product A (stock > 0) and Product B (stock 0).
+    steps:
+      - Load the Demo Shop page upright.
+      - Using Chrome DevTools remote inspector, measure the rendered width and
+        height in CSS pixels of Product A's quantity field.
+      - Repeat for Product B's quantity field (present per EC-003.3) and for
+        every other product's quantity field shown.
+      - Confirm every measured quantity field is at least 48 CSS pixels wide and
+        at least 48 CSS pixels tall.
+    source: test_designer
+  - id: MOB-CART-08
+    title: Quantity field is at least 48x48dp in landscape
+    requirement: REQ-003
+    criteria:
+      - AC-003.1
+    oracle:
+      criterion: AC-003.1
+      expected: Every quantity field is at least 48 by 48 density-independent pixels,
+        sideways.
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Device rotated to landscape.
+      - Sizes measured in CSS pixels per EC-003.1.
+    steps:
+      - Rotate the device to landscape and load the Demo Shop page.
+      - Using Chrome DevTools remote inspector, measure the width and height in
+        CSS pixels of every product's quantity field, including Product B (out
+        of stock).
+      - Confirm every measured quantity field is at least 48 by 48 CSS pixels.
+    source: test_designer
+  - id: MOB-CART-09
+    title: Add-to-cart buttons are at least 48x48dp, portrait and landscape
+    requirement: REQ-003
+    criteria:
+      - AC-003.2
+    oracle:
+      criterion: AC-003.2
+      expected: Every "Add <product name> to cart" button is at least 48 by 48
+        density-independent pixels, upright and sideways.
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Catalogue includes Product A (stock > 0) and Product B (stock 0,
+        disabled "Out of stock" button).
+      - Per EC-003.2, the disabled "Out of stock" button is excluded from this
+        check.
+    steps:
+      - In portrait, measure via DevTools the width and height (CSS pixels) of
+        "Add Product A to cart" and every other enabled add button.
+      - Confirm each is at least 48 by 48 CSS pixels.
+      - Confirm Product B's disabled "Out of stock" button is not counted in
+        this check, per EC-003.2.
+      - Rotate to landscape and repeat the measurement of every enabled add
+        button.
+    source: test_designer
+  - id: MOB-CART-10
+    title: Remove buttons are at least 48x48dp, portrait and landscape
+    requirement: REQ-003
+    criteria:
+      - AC-003.2
+    oracle:
+      criterion: AC-003.2
+      expected: Every "Remove <product name>" button is at least 48 by 48
+        density-independent pixels, upright and sideways.
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset, then Product A and Product C added to the cart so two cart
+        lines exist.
+    steps:
+      - In portrait, measure via DevTools the width and height (CSS pixels) of
+        "Remove Product A" and "Remove Product C".
+      - Confirm each is at least 48 by 48 CSS pixels.
+      - Rotate to landscape and repeat the measurement of both remove buttons.
+    source: test_designer
+  - id: MOB-CART-11
+    title: Quantity field requests the numeric keypad
+    requirement: REQ-004
+    criteria:
+      - AC-004.1
+    oracle:
+      criterion: AC-004.1
+      expected: Every quantity field is a number field that asks Android for the
+        numeric keypad (input type "number" and input mode "numeric").
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Catalogue includes Product A (stock > 0) and Product B (stock 0).
+    steps:
+      - Load the Demo Shop page.
+      - Using Chrome DevTools remote inspector, examine Product A's quantity
+        field element.
+      - Confirm its "type" attribute is "number" and its "inputmode" attribute
+        is "numeric".
+      - Repeat for Product B's quantity field and at least one other product's
+        quantity field.
+    source: test_designer
+  - id: MOB-CART-12
+    title: A numeric on-screen keypad appears when a quantity field is focused
+    requirement: REQ-004
+    criteria:
+      - EC-004.1
+    oracle:
+      criterion: EC-004.1
+      expected: The exact keypad layout is chosen by the phone and is not specified;
+        the rendered keypad itself is checked manually.
+    surface: mobile
+    technique: happy_path
+    manual:
+      reason: "EC-004.1: the rendered keypad layout is chosen by the phone and is
+        checked by a person."
+    preconditions:
+      - Android 15, Chrome 149, Pixel 8-class emulator or device with a visible
+        on-screen keyboard.
+    steps:
+      - Tap the quantity field for Product A.
+      - Visually confirm a numeric on-screen keypad appears rather than a full
+        alphabetic keyboard.
+      - Record the keypad layout shown as a manual observation; no specific
+        layout is required.
+    source: test_designer
+  - id: MOB-CART-13
+    title: Quantity field label and default value match PRD-CART-UI AC-003.1
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: 'Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.1: every product has a quantity field labelled "Quantity for
+        <product name>" whose value starts at 1.'
+    surface: mobile
+    technique: equivalence
+    steps:
+      - Load the Demo Shop page on the mobile emulator.
+      - Confirm Product A's quantity field has the accessible label "Quantity
+        for Product A", per PRD-CART-UI AC-003.1.
+      - Confirm the field's initial value is 1.
+      - Repeat for at least one other in-stock product.
+    source: test_designer
+  - id: MOB-CART-14
+    title: Enabled add button for an in-stock product matches PRD-CART-UI AC-003.2
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: 'Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.2: every product with stock above zero has an enabled button "Add
+        <product name> to cart".'
+    surface: mobile
+    technique: equivalence
+    steps:
+      - Load the page.
+      - Confirm Product A (stock > 0) shows an enabled button labelled "Add
+        Product A to cart", per PRD-CART-UI AC-003.2.
+    source: test_designer
+  - id: MOB-CART-15
+    title: Disabled Out of stock button matches PRD-CART-UI AC-003.3
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: 'Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.3: a product with zero stock shows a disabled button "Out of
+        stock" instead of the add button.'
+    surface: mobile
+    technique: equivalence
+    steps:
+      - Load the page.
+      - Locate Product B (stock 0).
+      - Confirm it shows a disabled button labelled "Out of stock" instead of an
+        "Add ... to cart" button, per PRD-CART-UI AC-003.3.
+    source: test_designer
+  - id: MOB-CART-16
+    title: A valid quantity add on mobile adds that quantity to the cart
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: "Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.4: entering a valid quantity and pressing the add button adds
+        that quantity of the product to the cart."
+    surface: mobile
+    technique: happy_path
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Load the page. Set Product A's quantity to 3.
+      - Tap "Add Product A to cart".
+      - Confirm the cart now includes a line for Product A with quantity 3, per
+        PRD-CART-UI AC-003.4.
+    source: test_designer
+  - id: MOB-CART-17
+    title: Cart line text and line total match PRD-CART-UI AC-004.1
+    requirement: REQ-005
+    criteria:
+      - AC-005.2
+    oracle:
+      criterion: AC-005.2
+      expected: 'Removing a line on a phone gives the result and texts of PRD-CART-UI
+        AC-004.1: every cart line shows "<product name> × <quantity>" and its
+        line total as a dollar amount with two decimals.'
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Add Product A with quantity 3 to the cart.
+      - Confirm the cart line reads "Product A × 3" and shows its line total as
+        a dollar amount with two decimals equal to price × 3, per PRD-CART-UI
+        AC-004.1.
+    source: test_designer
+  - id: MOB-CART-18
+    title: Remove button removes the cart line on mobile
+    requirement: REQ-005
+    criteria:
+      - AC-005.2
+    oracle:
+      criterion: AC-005.2
+      expected: 'Removing a line on a phone gives the result and texts of PRD-CART-UI
+        AC-004.2: every cart line has a button "Remove <product name>" that
+        removes the line.'
+    surface: mobile
+    technique: happy_path
+    preconditions:
+      - Cart contains a line for Product A.
+    steps:
+      - Tap "Remove Product A".
+      - Confirm the Product A line is removed from the cart, per PRD-CART-UI
+        AC-004.2.
+    source: test_designer
+  - id: MOB-CART-19
+    title: Empty cart shows "Your cart is empty." on mobile
+    requirement: REQ-005
+    criteria:
+      - AC-005.2
+    oracle:
+      criterion: AC-005.2
+      expected: 'Removing a line on a phone gives the result and texts of PRD-CART-UI
+        AC-004.3: an empty cart shows "Your cart is empty."'
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset (empty cart).
+    steps:
+      - Load the page with an empty cart (or remove all lines until empty).
+      - Confirm the Cart section shows "Your cart is empty.", per PRD-CART-UI
+        AC-004.3.
+    source: test_designer
+  - id: MOB-CART-20
+    title: Cart total text and value match PRD-CART-UI AC-005.1
+    requirement: REQ-005
+    criteria:
+      - AC-005.3
+    oracle:
+      criterion: AC-005.3
+      expected: 'The total on a phone shows the texts of PRD-CART-UI AC-005.1: "Total:
+        $<amount>" with two decimals, and the amount equals the sum of the line
+        totals.'
+    surface: mobile
+    technique: money
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product A (stock > 0) and Product C (low stock).
+    steps:
+      - Add Product A with quantity 2 and Product C with quantity 1.
+      - 'Confirm the Cart section shows "Total: $<amount>" with two decimals,
+        where the amount equals the sum of both line totals, per PRD-CART-UI
+        AC-005.1.'
+    source: test_designer
+  - id: MOB-CART-21
+    title: Total updates without reload within 2 seconds after a successful add
+    requirement: REQ-005
+    criteria:
+      - AC-005.3
+    oracle:
+      criterion: AC-005.3
+      expected: The total on a phone updates without a reload within 2 seconds,
+        matching PRD-CART-UI AC-005.2 (after a successful add).
+    surface: mobile
+    technique: time
+    preconditions:
+      - "Server reset via GET /__reset (Total: $0.00)."
+    steps:
+      - 'Note the current total ("Total: $0.00").'
+      - Set Product A's quantity to 2 and tap "Add Product A to cart".
+      - Within 2 seconds, confirm the total updates to the new correct amount
+        without the page reloading (no navigation or full-page reload occurs).
+    source: test_designer
+  - id: MOB-CART-22
+    title: Total updates without reload within 2 seconds after a successful remove
+    requirement: REQ-005
+    criteria:
+      - AC-005.3
+    oracle:
+      criterion: AC-005.3
+      expected: The total on a phone updates without a reload within 2 seconds,
+        matching PRD-CART-UI AC-005.3 (after a successful remove).
+    surface: mobile
+    technique: time
+    preconditions:
+      - Cart contains Product A (qty 2) and Product C (qty 1).
+    steps:
+      - Tap "Remove Product A".
+      - Within 2 seconds, confirm the total updates to reflect only the
+        remaining Product C line, without the page reloading.
+    source: test_designer
+  - id: MOB-CART-23
+    title: "Empty cart shows Total: $0.00 on mobile"
+    requirement: REQ-005
+    criteria:
+      - AC-005.3
+    oracle:
+      criterion: AC-005.3
+      expected: 'The total on a phone shows the texts of PRD-CART-UI AC-005.4: an
+        empty cart shows "Total: $0.00".'
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset (empty cart).
+    steps:
+      - Load the page with an empty cart.
+      - 'Confirm the Cart section shows "Total: $0.00", per PRD-CART-UI
+        AC-005.4.'
+    source: test_designer
+  - id: MOB-CART-24
+    title: Invalid quantity failure message matches PRD-CART-UI AC-006.1
+    requirement: REQ-005
+    criteria:
+      - AC-005.4
+    oracle:
+      criterion: AC-005.4
+      expected: 'Failure messages on a phone match PRD-CART-UI AC-006.1 exactly:
+        adding a quantity that is not a whole number from 1 to 10, or that would
+        take the line above 10, shows "Quantity must be a whole number from 1 to
+        10."'
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Set Product A's quantity to 11.
+      - Tap "Add Product A to cart".
+      - Confirm the message "Quantity must be a whole number from 1 to 10." is
+        shown, per PRD-CART-UI AC-006.1.
+    source: test_designer
+  - id: MOB-CART-25
+    title: Not enough stock failure message matches PRD-CART-UI AC-006.2
+    requirement: REQ-005
+    criteria:
+      - AC-005.4
+    oracle:
+      criterion: AC-005.4
+      expected: 'Failure messages on a phone match PRD-CART-UI AC-006.2 exactly:
+        adding more than the available stock shows "Not enough stock for that
+        quantity."'
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product C with stock 3.
+    steps:
+      - Set Product C's quantity field to 4 (one more than its stock of 3).
+      - Tap "Add Product C to cart".
+      - Confirm the message "Not enough stock for that quantity." is shown, per
+        PRD-CART-UI AC-006.2.
+    source: test_designer
+  - id: MOB-CART-26
+    title: Failure messages use the alert role on mobile
+    requirement: REQ-005
+    criteria:
+      - AC-005.4
+    oracle:
+      criterion: AC-005.4
+      expected: Failure messages on a phone match PRD-CART-UI AC-006.3 exactly,
+        including the alert role.
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Set Product A's quantity to 11 and tap "Add Product A to cart" to
+        trigger a message.
+      - Using Chrome DevTools remote inspector, confirm the message element has
+        the alert role, per PRD-CART-UI AC-006.3.
+    source: test_designer
+  - id: MOB-CART-27
+    title: Displayed stock stays static after adding to cart on mobile
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-002.1: the stock shown is the catalogue figure and does not change as
+        items are added to the cart."
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Server reset via GET /__reset.
+      - Note Product A's shown stock text, e.g. "25 in stock".
+    steps:
+      - Note Product A's displayed stock text before adding anything.
+      - Add Product A to the cart with quantity 3.
+      - Confirm the stock text next to Product A in the Products section is
+        unchanged from before the add, per PRD-CART-UI EC-002.1.
+    source: test_designer
+  - id: MOB-CART-28
+    title: Product name markup is shown literally on mobile
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-002.2: markup inside a product name is displayed literally and never
+        interpreted, in the product list and in cart lines."
+    surface: mobile
+    technique: data_extreme
+    manual:
+      reason: The fixed catalogue has no product name containing markup; checked by a
+        person against a prepared build.
+    steps:
+      - Confirm with the test data owner whether the catalogue includes a
+        product whose name contains markup (for example "<b>Bold</b> Mug").
+      - If such a product exists, load the Demo Shop page on the mobile emulator
+        and locate it in the Products section.
+      - Confirm its name is rendered as literal text, with the markup characters
+        visible rather than interpreted, per PRD-CART-UI EC-002.2.
+      - Add it to the cart and confirm its cart line also shows the name as
+        literal text.
+    source: test_designer
+  - id: MOB-CART-29
+    title: A typed quantity outside 1-10 is accepted and rejected with the quantity
+      message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-003.1: the quantity field accepts any typed value; values outside 1
+        to 10 are rejected with the message in AC-006.1."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Type "0" into Product A's quantity field.
+      - Tap "Add Product A to cart".
+      - Confirm the field accepted the typed "0" and the message "Quantity must
+        be a whole number from 1 to 10." is shown, per PRD-CART-UI EC-003.1.
+    source: test_designer
+  - id: MOB-CART-30
+    title: Field keeps the entered value after a rejected add and a retry succeeds
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-003.2: after a rejected add, the quantity field keeps the entered
+        value and the shopper can try again straight away."
+    surface: mobile
+    technique: equivalence
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Type "15" into Product A's quantity field and tap "Add Product A to
+        cart"; confirm the rejection message appears.
+      - Confirm the quantity field still shows "15".
+      - Change the field to "5" and tap "Add Product A to cart" again
+        immediately.
+      - Confirm this second attempt succeeds and Product A is added to the cart
+        with quantity 5, per PRD-CART-UI EC-003.2.
+    source: test_designer
+  - id: MOB-CART-31
+    title: Out-of-stock product's quantity field stays present
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-003.3: the quantity field of an out-of-stock product stays present;
+        only its button is disabled."
+    surface: mobile
+    technique: equivalence
+    steps:
+      - Load the page and locate Product B (stock 0).
+      - Confirm its quantity field is present and can accept input.
+      - Confirm only its "Out of stock" button is disabled, per PRD-CART-UI
+        EC-003.3.
+    source: test_designer
+  - id: MOB-CART-32
+    title: An empty quantity field is rejected with the quantity message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-003.4: an empty field is rejected with the message in AC-006.1."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Clear Product A's quantity field completely so it is empty.
+      - Tap "Add Product A to cart".
+      - Confirm the message "Quantity must be a whole number from 1 to 10." is
+        shown, per PRD-CART-UI EC-003.4.
+    source: test_designer
+  - id: MOB-CART-33
+    title: Refreshing the page shows the current server cart and clears unsent input
+      and messages
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-004.2: a refresh or reopening the page shows the current cart and
+        clears unsent quantities and messages."
+    surface: mobile
+    technique: navigation
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Add Product A to the cart with quantity 2 (successful).
+      - Type "7" into Product C's quantity field without tapping Add.
+      - Set Product A's quantity field to 11 and tap Add to trigger the
+        rejection message.
+      - Refresh the Demo Shop page in Chrome.
+      - Confirm the reloaded page shows the current server cart (Product A at
+        quantity 2), Product C's field back to its default and no rejected
+        quantity carried over, and no failure message shown, per PRD-CART-UI
+        EC-004.2.
+    source: test_designer
+  - id: MOB-CART-34
+    title: A failure message clears when the next add or remove succeeds
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.1: a message clears when the next add or remove succeeds."
+    surface: mobile
+    technique: state_transition
+    preconditions:
+      - Server reset via GET /__reset.
+    steps:
+      - Set Product A's quantity to 11 and tap Add to trigger "Quantity must be
+        a whole number from 1 to 10."
+      - Change the quantity to 2 and tap Add again (a successful add).
+      - Confirm the failure message is no longer shown, per PRD-CART-UI EC-006.1.
+    source: test_designer
+  - id: MOB-CART-35
+    title: A new failure replaces the previously shown message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.2: a new failure replaces the message already shown."
+    surface: mobile
+    technique: state_transition
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product C with stock 3.
+    steps:
+      - Set Product A's quantity to 11 and tap Add; confirm "Quantity must be a
+        whole number from 1 to 10." is shown.
+      - Set Product C's quantity to 4 (one more than its stock of 3) and tap Add.
+      - Confirm the message now reads "Not enough stock for that quantity." and
+        the earlier message is no longer shown, per PRD-CART-UI EC-006.2.
+    source: test_designer
+  - id: MOB-CART-36
+    title: An add that breaks both the 10-per-line and stock limits shows the
+      quantity message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.4: when an add breaks both the 10-per-line limit and the stock
+        limit, the quantity message in AC-006.1 is shown."
+    surface: mobile
+    technique: decision_table
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product C with stock 3.
+    steps:
+      - Set Product C's quantity field to 11 (breaks both the 10-per-line rule
+        and the stock-of-3 limit).
+      - Tap "Add Product C to cart".
+      - Confirm the message shown is "Quantity must be a whole number from 1 to
+        10." and not the stock message, per PRD-CART-UI EC-006.4.
+    source: test_designer
+  - id: MOB-CART-37
+    title: Available stock is catalogue stock minus quantity already in the cart
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: "The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.5: available stock means catalogue stock minus the quantity of
+        that product already in the cart."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product C with stock 3.
+    steps:
+      - Add Product C to the cart with quantity 2 (successful; 1 unit remains
+        available).
+      - Set Product C's quantity field to 2 and tap Add again.
+      - Confirm the message "Not enough stock for that quantity." is shown,
+        since available stock (3 minus 2 already in the cart = 1) is less than
+        the requested 2, per PRD-CART-UI EC-006.5.
+    source: test_designer
+  - id: MOB-CART-38
+    title: Adding a product that no longer exists shows the not-found message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: 'The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.3: if a product no longer exists when added, the page shows "That
+        product no longer exists."'
+    surface: mobile
+    technique: failure_path
+    manual:
+      reason: A product cannot disappear from the fixed catalogue during a session;
+        checked by a person against a prepared build.
+    steps:
+      - Load the Demo Shop page and note Product A as listed.
+      - Using the test environment's backend tooling, remove Product A from the
+        catalogue on the server while the page remains open with Product A still
+        displayed.
+      - On the mobile page, set Product A's quantity to 1 and tap "Add Product A
+        to cart".
+      - Confirm the page shows "That product no longer exists.", per PRD-CART-UI
+        EC-006.3.
+    source: test_designer
+  - id: MOB-CART-39
+    title: Removing a line no longer in the cart shows the not-in-cart message
+    requirement: REQ-005
+    criteria:
+      - EC-005.1
+    oracle:
+      criterion: EC-005.1
+      expected: 'The edge cases of PRD-CART-UI apply on phones too, including
+        EC-006.3: if a line is no longer in the cart when removed, the page
+        shows "That item is not in your cart."'
+    surface: mobile
+    technique: failure_path
+    manual:
+      reason: Producing a cart line that is removed out-of-band before the shopper's
+        own remove action requires test-only backend manipulation, outside
+        normal mobile UI interaction and not confirmed available in this staged
+        environment.
+    steps:
+      - Add Product A to the cart so its line and "Remove Product A" button are
+        shown.
+      - Using the test environment's backend tooling, remove Product A's line
+        directly on the server while the mobile page still shows it.
+      - On the mobile page, tap the still-visible "Remove Product A" button.
+      - Confirm the page shows "That item is not in your cart.", per PRD-CART-UI
+        EC-006.3.
+    source: test_designer
+  - id: MOB-CART-40
+    title: Adding the minimum valid quantity of 1 succeeds on mobile
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: "Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.4: entering a valid quantity and pressing the add button adds
+        that quantity of the product to the cart. Existing mobile cases only
+        exercise a mid-range quantity (3); the minimum boundary of the 1-to-10
+        range is untested."
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product A with stock > 0.
+    steps:
+      - Load the page. Leave Product A's quantity field at its default value of
+        1.
+      - Tap "Add Product A to cart".
+      - Confirm the cart shows a line "Product A × 1" with the correct line
+        total and no failure message, per PRD-CART-UI AC-003.4.
+    source: edge_case_hunter
+  - id: MOB-CART-41
+    title: Adding the maximum valid quantity of 10 in a single request succeeds on
+      mobile
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: Adding a product on a phone gives the result and texts of PRD-CART-UI
+        AC-003.4. Existing mobile cases test quantity 3 (valid) and 11 (max+1,
+        rejected) but never the maximum valid single-request quantity, 10.
+    surface: mobile
+    technique: boundary
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product A with stock of at least 10.
+    steps:
+      - Load the page. Set Product A's quantity field to 10.
+      - Tap "Add Product A to cart".
+      - Confirm the cart shows a line "Product A × 10" with the correct line
+        total and no failure message, per PRD-CART-UI AC-003.4.
+    source: edge_case_hunter
+  - id: MOB-CART-42
+    title: Two individually valid adds that push a line's cumulative quantity above
+      10 are rejected with the quantity message
+    requirement: REQ-005
+    criteria:
+      - AC-005.4
+    oracle:
+      criterion: AC-005.4
+      expected: "Failure messages on a phone match PRD-CART-UI AC-006.1 exactly:
+        adding a quantity that ... would take the line above 10 shows \"Quantity
+        must be a whole number from 1 to 10.\" Existing mobile cases
+        (MOB-CART-24, MOB-CART-36) only trigger this via a single out-of-range
+        or stock-conflicting request; none isolates the distinct 'cumulative
+        total above 10' clause with two individually valid requests and ample
+        stock."
+    surface: mobile
+    technique: decision_table
+    preconditions:
+      - Server reset via GET /__reset.
+      - Catalogue includes Product A with stock well above 10 (e.g. 25).
+    steps:
+      - Set Product A's quantity field to 6 and tap "Add Product A to cart";
+        confirm this succeeds, giving a line of 6.
+      - Set Product A's quantity field to 5 (itself within 1 to 10) and tap "Add
+        Product A to cart" again.
+      - Confirm the message shown is "Quantity must be a whole number from 1 to
+        10." (not the stock message), because the line would reach 11 while
+        stock remains ample, per PRD-CART-UI AC-006.1.
+    source: edge_case_hunter
+  - id: MOB-CART-45
+    title: Rotating from landscape back to portrait preserves cart, unsent quantity
+      and shown message
+    requirement: REQ-002
+    criteria:
+      - EC-002.1
+    oracle:
+      criterion: EC-002.1
+      expected: Rotating does not reload the page; the cart, an entered but unsent
+        quantity and a shown message stay as they were. MOB-CART-06 only
+        exercises the portrait-to-landscape direction; the reverse transition
+        between the same two states is untested.
+    surface: mobile
+    technique: state_transition
+    preconditions:
+      - Server reset via GET /__reset.
+      - Device starts in landscape.
+      - Catalogue includes Product A (stock > 0) and Product C (low stock, e.g.
+        3).
+    steps:
+      - In landscape, add Product A to the cart with quantity 2 (a successful
+        add).
+      - Set Product A's quantity field to 11 and tap Add again to trigger the
+        message "Quantity must be a whole number from 1 to 10."
+      - Type "4" into Product C's quantity field without tapping its Add button
+        (an unsent quantity).
+      - Rotate the device to portrait.
+      - Confirm the cart still shows the Product A line from step 1 unchanged,
+        the failure message from step 2 is still shown, Product C's field still
+        shows "4", and the page did not reload.
+    source: edge_case_hunter
+schema: qa.cases.v1
+prd_id: PRD-CART-MOBILE
+project: demo-shop

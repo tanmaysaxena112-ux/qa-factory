@@ -73,6 +73,7 @@ Acceptance criteria:
 
 Edge cases:
 - EC-005.1: The edge cases of PRD-CART-UI apply on phones too, except EC-007.1 and EC-008.3, which concern desktop browser engines.
+- EC-005.2: The automated accessibility scan and keyboard checks of PRD-CART-UI REQ-008 are verified on desktop engines and not repeated on phones; Tab-key reachability does not apply to a touch-only phone. Touch size (REQ-003) is the phone-specific accessibility check.
 
 ## Design references
 - projects/demo-shop/intake/grooming-mobile.md
@@ -83,3 +84,4 @@ Edge cases:
 - 2026-09-25 draft by prd-author (run RUN-2026-0925-019), after RUN-2026-0925-018 stopped at the critique step on a Claude usage limit.
 - 2026-09-25 critique by prd-critic: 7 issues (run RUN-2026-0925-019).
 - 2026-09-25 approved by claude-code on behalf of the QA Lead (github:tanmaysaxena112-ux). Decisions: verified on Android 15 and Chrome 149 only; enlarged fonts, keyboard-open behaviour and the back gesture out of scope; landscape layout follows the 700 pixel breakpoint of PRD-CART-UI; rotation keeps page state; keypad verified through the field's type and input mode, with the rendered keypad checked manually; PRD-CART-UI edge cases apply except those about desktop engines; disabled buttons excluded from touch size; REQ-002 and REQ-003 raised to medium risk because a shopper who cannot tap or reach a control cannot buy.
+- 2026-09-25 EC-005.2 added by claude-code on behalf of the QA Lead, answering an open question from edge-case-hunter (run RUN-2026-0925-022).
