@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.prd-draft.v1",
+  "title": "PRD Author output: the full Markdown PRD, following docs/prd-standard.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "prd_id", "markdown"],
+  "properties": {
+    "schema": { "const": "qa.prd-draft.v1" },
+    "prd_id": { "type": "string", "pattern": "^PRD-[A-Z0-9]+(-[A-Z0-9]+)*$" },
+    "markdown": { "type": "string", "minLength": 200 }
+  }
+}

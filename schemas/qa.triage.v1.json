@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.triage.v1",
+  "title": "Bug Investigator output: findings and root cause clusters",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "findings"],
+  "properties": {
+    "schema": { "const": "qa.triage.v1" },
+    "run_id": { "type": "string", "pattern": "^RUN-[0-9]{4}-[0-9]{4}-[0-9]{3}$" },
+    "findings": { "type": "array", "items": { "$ref": "qa.finding.v1" } },
+    "clusters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cluster_id", "dependency", "finding_ids"],
+        "properties": {
+          "cluster_id": { "type": "string", "pattern": "^RC-[0-9]{4}-[0-9]{4}-[0-9]{2}$" },
+          "dependency": { "type": "string", "minLength": 1 },
+          "finding_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

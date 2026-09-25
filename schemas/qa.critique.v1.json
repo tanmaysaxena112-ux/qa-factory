@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.critique.v1",
+  "title": "PRD Critic output: gaps that must be answered before approval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "prd_id", "verdict", "issues"],
+  "properties": {
+    "schema": { "const": "qa.critique.v1" },
+    "prd_id": { "type": "string", "pattern": "^PRD-[A-Z0-9]+(-[A-Z0-9]+)*$" },
+    "verdict": { "type": "string", "enum": ["ready", "needs_changes"] },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "kind", "detail", "question"],
+        "properties": {
+          "target": { "type": "string", "pattern": "^(REQ-[0-9]{3}|(AC|EC|OQ)-[0-9]{3}\\.[0-9]+|GLOBAL)$" },
+          "kind": {
+            "type": "string",
+            "enum": ["ambiguous", "untestable", "missing_state", "missing_error_path", "missing_boundary", "conflict", "invented_behaviour", "out_of_scope"]
+          },
+          "detail": { "type": "string", "minLength": 1 },
+          "question": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "if": { "type": "object", "properties": { "verdict": { "const": "ready" } } },
+  "then": { "type": "object", "properties": { "issues": { "type": "array", "maxItems": 0 } } }
+}

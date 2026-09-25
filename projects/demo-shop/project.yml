@@ -1,0 +1,16 @@
+name: demo-shop
+description: Local demo cart API used to demonstrate the full QA Factory pipeline
+surfaces: [api]
+envs:
+  dev:
+    # The runner starts the app itself on a free port, so every run is isolated.
+    local_app:
+      command: [node, projects/demo-shop/app/server.js]
+      health: /health
+      reset: /__reset
+      fault_env: DEMO_FAULT
+    expected_build: demo-shop-1.0.0
+api:
+  openapi: api/openapi.yaml
+  tests: api/tests
+faults: faults/faults.yaml

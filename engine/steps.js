@@ -75,7 +75,7 @@ export async function agentStep({ step, ctx, runId, config, paths, evidence, sch
   const dir = `steps/${step.id}`;
   const cwd = confine(step.cwd ? substitute(step.cwd, ctx) : evidence.runDir(runId), paths);
   const prompt = substitute(step.prompt, ctx, { fence: true });
-  const schema = schemas.get(step.output);
+  const schema = schemas.bundle(step.output);
   const mcpFile = evidence.write(runId, `${dir}/mcp.json`, { mcpServers: servers });
   const settingsFile = evidence.write(runId, `${dir}/settings.json`, agentSettings(paths));
 

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.calibration.v1",
+  "title": "Calibration record: proof that a suite passes a good build and catches seeded faults",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project", "baseline", "faults", "identity_check", "fault_detection_rate", "ok"],
+  "properties": {
+    "schema": { "const": "qa.calibration.v1" },
+    "project": { "type": "string" },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "ok"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "ok": { "type": "boolean" }
+      }
+    },
+    "faults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "detected", "failing_tests"],
+        "properties": {
+          "id": { "type": "string" },
+          "detected": { "type": "boolean" },
+          "failing_tests": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "identity_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "ok"],
+      "properties": {
+        "status": { "type": "string" },
+        "ok": { "type": "boolean" }
+      }
+    },
+    "fault_detection_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "target": { "type": "number", "minimum": 0, "maximum": 1 },
+    "ok": { "type": "boolean" }
+  }
+}

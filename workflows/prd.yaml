@@ -1,0 +1,48 @@
+schema: qa.workflow.v1
+name: prd
+description: >
+  Grooming notes to a draft PRD. The PRD Author writes it, an independent PRD
+  Critic attacks it, the QA Lead decides, and only then is it written into the
+  project and validated.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: "PRD ID, for example PRD-CART" }
+steps:
+  - id: stage-intake
+    run: qa stage --to intake projects/${params.project}/intake projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml docs/prd-standard.md
+
+  - id: write-prd
+    needs: [stage-intake]
+    agent: prd-author
+    cwd: ${run.dir}/staged/intake
+    prompt: |
+      Write ${params.prd_id} for project ${params.project}. Start with INDEX.txt in your working folder; it lists every input file.
+    output: qa.prd-draft.v1
+    timeout_seconds: 900
+
+  - id: stage-critique
+    needs: [write-prd]
+    run: qa stage --to critique run:steps/write-prd/output.json projects/${params.project}/intake projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml docs/prd-standard.md docs/test-design-techniques.md
+
+  - id: critique
+    needs: [stage-critique]
+    agent: prd-critic
+    cwd: ${run.dir}/staged/critique
+    prompt: |
+      Critique draft ${params.prd_id} for project ${params.project}. The draft is the "markdown" field of steps/write-prd/output.json. INDEX.txt lists every file.
+    output: qa.critique.v1
+    timeout_seconds: 900
+
+  - id: qa-lead
+    needs: [critique]
+    gate: qa-lead
+    message: Read the draft and the critique. Approve to write the draft into the project; answer open questions in the PRD before setting it to approved.
+
+  - id: promote
+    needs: [qa-lead]
+    run: qa promote --step write-prd --field markdown --format text --to projects/${params.project}/prd/${params.prd_id}.md
+
+  - id: validate
+    needs: [promote]
+    run: qa prd validate --project ${params.project}

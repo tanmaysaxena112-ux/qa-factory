@@ -17,7 +17,7 @@ PRD → critique → test cases → edge case hunt → automation → calibratio
 |---|---|---|
 | Engine | Runs workflow steps in order, holds gates, records everything | No. Plain code reading a validated workflow file. |
 | Agents | Write PRDs, test cases, triage failures, review evidence | Contained: restricted Claude Code, no shell, only named MCP servers, confined to one folder |
-| Runners | Newman, Playwright, WebdriverIO + Appium | Allowlisted commands only, no shell, same command gives the same result |
+| Runners | Own API runner (Node `fetch` plus OpenAPI contract checks), Playwright, WebdriverIO 9 + Appium 3 | Allowlisted commands only, no shell, same command gives the same result |
 | Evidence | Every output of every run | Redacted, written once, hashed and sealed; tampering is detected |
 | QA Lead | Approves gates, merges, releases | The only one who can. Agents are refused by the engine and by hooks. |
 
@@ -31,7 +31,7 @@ PRD → critique → test cases → edge case hunt → automation → calibratio
 
 ## Quick start
 
-Requirements: Node 22.13 or later (24 LTS recommended), Claude Code, GitHub CLI.
+Requirements: Node 24 LTS, Claude Code 2.1.248 or later (restricted mode), GitHub CLI.
 
 ```bash
 npm install

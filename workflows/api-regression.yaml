@@ -1,0 +1,81 @@
+schema: qa.workflow.v1
+name: api-regression
+description: >
+  Plan, execute, re-execute, triage, blind review and report for a project's API
+  tests, ending at the QA Lead's release decision. Triage and review run in
+  parallel and never see each other's output.
+max_cost_usd: 6
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: PRD the release is judged against }
+  env: { default: dev, description: dev or uat }
+steps:
+  - id: check-tests
+    run: qa api validate --project ${params.project}
+
+  - id: stage-plan
+    needs: [check-tests]
+    run: qa stage --to plan projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases projects/${params.project}/api/tests
+
+  - id: plan
+    needs: [stage-plan]
+    agent: planner
+    cwd: ${run.dir}/staged/plan
+    prompt: |
+      Plan a full regression of project ${params.project} on environment ${params.env}. INDEX.txt lists every file.
+    output: qa.testplan.v1
+    timeout_seconds: 600
+
+  - id: execute
+    needs: [plan]
+    run: qa api run --project ${params.project} --env ${params.env} --plan ${run.dir}/steps/plan/output.json
+    timeout_seconds: 900
+
+  - id: rerun
+    needs: [execute]
+    run: qa api rerun --project ${params.project} --env ${params.env}
+    timeout_seconds: 600
+
+  - id: stage-triage
+    needs: [rerun]
+    run: qa stage --to triage run:api/main projects/${params.project}/prd/${params.prd_id}.md
+
+  - id: triage
+    needs: [stage-triage]
+    agent: bug-investigator
+    cwd: ${run.dir}/staged/triage
+    prompt: |
+      Triage run ${run.id}. Results are in api/main/results.json with one evidence file per test. INDEX.txt lists every file.
+    output: qa.triage.v1
+    timeout_seconds: 900
+
+  - id: stage-review
+    needs: [rerun]
+    run: qa stage --to review run:api/main run:api/rerun projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases
+
+  - id: review
+    needs: [stage-review]
+    agent: blind-reviewer
+    cwd: ${run.dir}/staged/review
+    prompt: |
+      Review run ${run.id} against ${params.prd_id}. Results: api/main/results.json. Re-execution: api/rerun/comparison.json. INDEX.txt lists every file.
+    output: qa.review.v1
+    timeout_seconds: 1500
+
+  - id: stage-report
+    needs: [triage, review]
+    run: qa stage --to report run:api/main/results.json run:api/rerun/comparison.json run:steps/review/output.json run:steps/triage/output.json projects/${params.project}/prd/${params.prd_id}.md
+
+  - id: report
+    needs: [stage-report]
+    agent: reporter
+    cwd: ${run.dir}/staged/report
+    prompt: |
+      Report on run ${run.id}. The reviewer's verdict is steps/review/output.json and the triage is steps/triage/output.json. INDEX.txt lists every file.
+    output: qa.report.v1
+    timeout_seconds: 600
+
+  - id: qa-lead
+    needs: [report]
+    gate: qa-lead
+    message: Release decision. Read the report, the blind review and the findings.

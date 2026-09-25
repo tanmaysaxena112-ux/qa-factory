@@ -14,7 +14,7 @@ params:
   env: { required: true, description: dev or uat }
 steps:
   - id: execute
-    run: newman run projects/demo/api/collection.json --env-var env=${params.env}
+    run: qa api run --project demo --env ${params.env}
     env: [DEMO_API_TOKEN]    # names only; values come from the environment
   - id: triage
     needs: [execute]

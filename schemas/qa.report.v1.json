@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.report.v1",
+  "title": "Reporter output: release readiness summary where every number cites a file",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "recommendation", "counts", "coverage", "summary", "citations"],
+  "properties": {
+    "schema": { "const": "qa.report.v1" },
+    "run_id": { "type": "string", "pattern": "^RUN-[0-9]{4}-[0-9]{4}-[0-9]{3}$" },
+    "recommendation": { "type": "string", "enum": ["release", "release_with_risks", "do_not_release", "blocked"] },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "fail", "blocked", "not_run", "flaky"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "not_run": { "type": "integer", "minimum": 0 },
+        "flaky": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criteria_total", "criteria_passing"],
+      "properties": {
+        "criteria_total": { "type": "integer", "minimum": 0 },
+        "criteria_passing": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "manual_only": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string", "minLength": 1 },
+    "citations": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  }
+}

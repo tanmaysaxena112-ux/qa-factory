@@ -1,0 +1,17 @@
+# Seeded fault library. Calibration starts the app once per fault; a healthy
+# suite must fail at least once against every fault.
+faults:
+  - id: wrong-status
+    description: Adding an item returns 200 instead of 201
+  - id: missing-total
+    description: The cart response omits the total
+  - id: quantity-off-by-one
+    description: A cart line accepts a quantity of 11
+  - id: rounding
+    description: Line totals carry floating point error instead of exact cents
+  - id: no-404
+    description: Adding an unknown product succeeds instead of returning 404
+  - id: no-stock-check
+    description: More items than are in stock can be added
+  - id: delete-noop
+    description: Removing a line reports success but leaves it in the cart

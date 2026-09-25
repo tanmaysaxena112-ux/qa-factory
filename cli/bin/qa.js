@@ -1,4 +1,5 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
+import { spawnSync } from 'node:child_process';
 import { userInfo, hostname } from 'node:os';
 import { parseArgs } from 'node:util';
 import { resolvePaths } from '../../engine/config.js';
@@ -7,6 +8,7 @@ import { createEngine } from '../../engine/engine.js';
 import { loadSchemas } from '../../engine/schemas.js';
 import { listWorkflows, loadWorkflow } from '../../engine/workflow.js';
 import { createEvidence } from '../../engine/evidence.js';
+import { runCommand } from '../commands.js';
 
 // Exit codes describe the run, not the command, so CI never mistakes a pause
 // or a rejection for success.
@@ -26,10 +28,24 @@ const HELP = `qa: QA Factory command line
   qa halt | qa unhalt                 Stop or allow new work platform-wide
   qa evidence verify <run-id>         Check sealed evidence against its manifest
 
+  qa prd validate --project <p>       Check every PRD of a project against the standard
+  qa prd index --file <PRD.md>        Print the generated qa.prd.v1 index
+  qa cases validate --project <p>     Check cases: oracles, coverage, high-risk depth
+  qa api validate --project <p>       Check every API test implements an approved case
+  qa api run --project <p> [--env dev] [--plan f] [--only IDS] [--label L] [--out dir]
+  qa calibrate --project <p> [--env dev] [--out dir]
+  qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
+  qa promote --step <id> --to <path>  Write approved agent output into the project
+
 Exit codes: 0 completed, 1 failed, 2 usage error, 3 rejected, 10 waiting for approval, 11 halted`;
 
+// The GitHub login is the identity the rest of the platform already trusts
+// (qa doctor checks it), so it is what an audit reader expects to see.
 function approverIdentity() {
-  return process.env.QA_APPROVER || `${userInfo().username}@${hostname()}`;
+  if (process.env.QA_APPROVER) return process.env.QA_APPROVER;
+  const gh = spawnSync('gh', ['api', 'user', '--jq', '.login'], { encoding: 'utf8', timeout: 10000 });
+  const login = gh.status === 0 ? gh.stdout.trim() : '';
+  return login ? `github:${login}` : `${userInfo().username}@${hostname()}`;
 }
 
 function printRun(run, json) {
@@ -58,6 +74,18 @@ async function main(argv) {
       offline: { type: 'boolean', default: false },
       param: { type: 'string', multiple: true, default: [] },
       reason: { type: 'string' },
+      project: { type: 'string' },
+      env: { type: 'string' },
+      plan: { type: 'string' },
+      only: { type: 'string' },
+      label: { type: 'string' },
+      out: { type: 'string' },
+      file: { type: 'string' },
+      to: { type: 'string' },
+      step: { type: 'string' },
+      field: { type: 'string' },
+      format: { type: 'string' },
+      'merge-edge': { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });
@@ -65,6 +93,17 @@ async function main(argv) {
   if (!command || values.help) {
     console.log(HELP);
     return command ? 0 : EXIT.usage;
+  }
+
+  try {
+    const handled = await runCommand(command, rest, values);
+    if (handled !== null) return handled;
+  } catch (e) {
+    if (e.usage) {
+      console.error(e.message);
+      return EXIT.usage;
+    }
+    throw e;
   }
 
   if (command === 'doctor') {

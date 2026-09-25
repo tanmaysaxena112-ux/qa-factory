@@ -8,8 +8,15 @@ const sha = 'a'.repeat(64);
 
 test('every contract schema compiles in strict mode', () => {
   assert.deepEqual(schemas.ids, [
-    'qa.finding.v1', 'qa.prd.v1', 'qa.result.v1', 'qa.review.v1', 'qa.selftest.v1', 'qa.testplan.v1', 'qa.workflow.v1',
+    'qa.apitests.v1', 'qa.calibration.v1', 'qa.cases.v1', 'qa.critique.v1', 'qa.edgecases.v1', 'qa.finding.v1', 'qa.prd-draft.v1',
+    'qa.prd.v1', 'qa.report.v1', 'qa.result.v1', 'qa.review.v1', 'qa.selftest.v1', 'qa.testplan.v1', 'qa.triage.v1', 'qa.workflow.v1',
   ]);
+});
+
+test('bundled schemas are self-contained for the model', () => {
+  const bundled = schemas.bundle('qa.triage.v1');
+  assert.equal(JSON.stringify(bundled).includes('"$ref":"qa.'), false);
+  assert.ok(bundled.$defs.qa_finding_v1);
 });
 
 test('a PASS or FAIL result must cite an artefact', () => {

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.cases.v1",
+  "title": "Manual test cases for one PRD. Every case cites the criterion its expected result comes from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "prd_id", "project", "cases"],
+  "properties": {
+    "schema": { "const": "qa.cases.v1" },
+    "prd_id": { "type": "string", "pattern": "^PRD-[A-Z0-9]+(-[A-Z0-9]+)*$" },
+    "project": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "cases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "requirement", "criteria", "oracle", "surface", "technique", "steps", "source"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(API|WEB|MOB)-[A-Z0-9]+-[0-9]{2,}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "requirement": { "type": "string", "pattern": "^REQ-[0-9]{3}$" },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" }
+        },
+        "oracle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["criterion", "expected"],
+          "properties": {
+            "criterion": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" },
+            "expected": { "type": "string", "minLength": 1 }
+          }
+        },
+        "surface": { "type": "string", "enum": ["api", "web", "mobile"] },
+        "technique": {
+          "type": "string",
+          "enum": [
+            "happy_path", "boundary", "equivalence", "decision_table", "state_transition", "pairwise",
+            "data_extreme", "time", "concurrency", "failure_path", "permission", "navigation", "money"
+          ]
+        },
+        "preconditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "steps": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "source": { "type": "string", "enum": ["test_designer", "edge_case_hunter", "qa_lead"] }
+      }
+    }
+  }
+}

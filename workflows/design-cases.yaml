@@ -1,0 +1,52 @@
+schema: qa.workflow.v1
+name: design-cases
+description: >
+  Approved PRD to manual test cases. The Test Designer covers every acceptance
+  criterion, an independent Edge Case Hunter finds what was missed, the QA Lead
+  decides, and the merged case set is written and checked for coverage.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: Approved PRD ID }
+steps:
+  - id: check-prd
+    run: qa prd validate --project ${params.project}
+
+  - id: stage-design
+    needs: [check-prd]
+    run: qa stage --to design projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/MISSION.md projects/${params.project}/project.yml docs/test-design-techniques.md
+
+  - id: design
+    needs: [stage-design]
+    agent: test-designer
+    cwd: ${run.dir}/staged/design
+    prompt: |
+      Write the test cases for ${params.prd_id} of project ${params.project}. INDEX.txt lists every file in your working folder.
+    output: qa.cases.v1
+    timeout_seconds: 1200
+
+  - id: stage-hunt
+    needs: [design]
+    run: qa stage --to hunt run:steps/design/output.json projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/project.yml docs/test-design-techniques.md
+
+  - id: hunt
+    needs: [stage-hunt]
+    agent: edge-case-hunter
+    cwd: ${run.dir}/staged/hunt
+    prompt: |
+      Hunt for scenarios missing from the cases for ${params.prd_id}. The existing cases are in steps/design/output.json. INDEX.txt lists every file.
+    output: qa.edgecases.v1
+    timeout_seconds: 1200
+
+  - id: qa-lead
+    needs: [hunt]
+    gate: qa-lead
+    message: Review the cases and the edge case proposals. Open questions go back into the PRD.
+
+  - id: promote
+    needs: [qa-lead]
+    run: qa promote --step design --merge-edge hunt --to projects/${params.project}/cases/${params.prd_id}.cases.yaml
+
+  - id: validate
+    needs: [promote]
+    run: qa cases validate --project ${params.project}

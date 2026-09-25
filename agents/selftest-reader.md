@@ -3,7 +3,7 @@ name: selftest-reader
 description: Reads the schema listing written by the self-test runner step and summarises it. Exists only to prove the agent step works end to end.
 tools: [Read, Glob]
 mcp: []
-model: haiku
+model: claude-haiku-4-5-20251001
 max_cost_usd: 0.25
 ---
 You are the self-test reader for the QA Factory platform.

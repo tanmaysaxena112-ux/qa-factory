@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Demo Shop API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service health and build identity
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status, build]
+                properties:
+                  status: { type: string, enum: [ok] }
+                  build: { type: string }
+  /products:
+    get:
+      operationId: listProducts
+      responses:
+        '200':
+          description: Product catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Product' }
+  /cart:
+    get:
+      operationId: getCart
+      responses:
+        '200':
+          description: Current cart
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+  /cart/items:
+    post:
+      operationId: addCartItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity]
+              properties:
+                product_id: { type: string }
+                quantity: { type: integer, minimum: 1, maximum: 10 }
+      responses:
+        '201':
+          description: Line added or increased
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartLine' }
+        '400':
+          description: Invalid quantity or body
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Not enough stock
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cart/items/{product_id}:
+    delete:
+      operationId: removeCartItem
+      parameters:
+        - { name: product_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '204':
+          description: Line removed
+        '404':
+          description: Product not in cart
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    Product:
+      type: object
+      additionalProperties: false
+      required: [id, name, price, stock]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        price: { type: number, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+    CartLine:
+      type: object
+      additionalProperties: false
+      required: [product_id, quantity, line_total]
+      properties:
+        product_id: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        line_total: { type: number, minimum: 0 }
+    Cart:
+      type: object
+      additionalProperties: false
+      required: [items, currency, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartLine' }
+        currency: { type: string, enum: [USD] }
+        total: { type: number, minimum: 0 }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }

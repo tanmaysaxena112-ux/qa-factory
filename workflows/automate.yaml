@@ -1,0 +1,43 @@
+schema: qa.workflow.v1
+name: automate
+description: >
+  Approved API cases to declarative API tests, then calibration: the suite must
+  pass a good build, catch every seeded fault and block on a wrong build.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  prd_id: { required: true, description: PRD whose cases are automated }
+steps:
+  - id: check-cases
+    run: qa cases validate --project ${params.project}
+
+  - id: stage
+    needs: [check-cases]
+    run: qa stage --to automate projects/${params.project}/cases/${params.prd_id}.cases.yaml projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/api/openapi.yaml projects/${params.project}/project.yml
+
+  - id: automate
+    needs: [stage]
+    agent: automation
+    cwd: ${run.dir}/staged/automate
+    prompt: |
+      Implement every API case of ${params.prd_id} for project ${params.project}. INDEX.txt lists every file in your working folder.
+    output: qa.apitests.v1
+    timeout_seconds: 1500
+
+  - id: qa-lead
+    needs: [automate]
+    gate: qa-lead
+    message: Review the generated tests against their cases before they are written into the project and calibrated.
+
+  - id: promote
+    needs: [qa-lead]
+    run: qa promote --step automate --to projects/${params.project}/api/tests/${params.prd_id}.json
+
+  - id: validate
+    needs: [promote]
+    run: qa api validate --project ${params.project}
+
+  - id: calibrate
+    needs: [validate]
+    run: qa calibrate --project ${params.project} --env dev
+    timeout_seconds: 900

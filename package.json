@@ -9,7 +9,7 @@
     "qa": "cli/bin/qa.js"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=24"
   },
   "scripts": {
     "test": "node --no-warnings=ExperimentalWarning --test \"test/**/*.test.js\"",

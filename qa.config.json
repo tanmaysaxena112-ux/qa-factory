@@ -13,7 +13,6 @@
       ["qa"],
       ["git"],
       ["gh"],
-      ["newman"],
       ["npx", "playwright"],
       ["npm", "run"]
     ]

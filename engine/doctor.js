@@ -31,9 +31,9 @@ export async function runDoctor({ repoRoot, dataRoot, network = true } = {}) {
   const add = (name, status, detail, fix) => checks.push({ name, status, detail, ...(fix ? { fix } : {}) });
 
   const [major, minor] = process.versions.node.split('.').map(Number);
-  if (major < 22 || (major === 22 && minor < 13)) add('Node version', FAIL, process.versions.node, 'Install Node 24 LTS');
-  else if (major !== 24) add('Node version', WARN, `${process.versions.node} works; Node 24 LTS is the supported base`, 'brew install node@24');
-  else add('Node version', PASS, process.versions.node);
+  // Only LTS lines are supported. Node 23 reached end of life on 2025-06-01.
+  if (major < 24 || major % 2 === 1) add('Node version', FAIL, `${process.versions.node} is not a supported LTS line`, 'Install Node 24 LTS: brew install node@24');
+  else add('Node version', PASS, `${process.versions.node} (LTS line)`);
 
   try {
     await import('node:sqlite');
