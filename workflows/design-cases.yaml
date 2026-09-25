@@ -14,7 +14,7 @@ steps:
 
   - id: stage-design
     needs: [check-prd]
-    run: qa stage --to design projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/MISSION.md projects/${params.project}/project.yml docs/test-design-techniques.md
+    run: qa stage --to design projects/${params.project}/prd projects/${params.project}/MISSION.md projects/${params.project}/project.yml docs/test-design-techniques.md
 
   - id: design
     needs: [stage-design]
@@ -27,7 +27,7 @@ steps:
 
   - id: stage-hunt
     needs: [design]
-    run: qa stage --to hunt run:steps/design/output.json projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/project.yml docs/test-design-techniques.md
+    run: qa stage --to hunt run:steps/design/output.json projects/${params.project}/prd projects/${params.project}/project.yml docs/test-design-techniques.md
 
   - id: hunt
     needs: [stage-hunt]
