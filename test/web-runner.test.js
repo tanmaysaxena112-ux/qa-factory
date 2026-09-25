@@ -109,3 +109,8 @@ test('keyboard, viewport, layout and mid-test requests work in a real browser', 
   const run = await runWebTests({ repoRoot: REPO_ROOT, project, envName: 'dev', tests, schemas, sink: fileSink(t), runId: 'RUN-2026-0925-001', label: 'main', browsers: ['chromium'] });
   assert.equal(run.pass, 3, JSON.stringify(run.results.map((r) => [r.test_id, r.status])));
 });
+
+test('field values are checked with toHaveValue, never text', () => {
+  const spec = compileSpec([{ test_id: 'WEB-SHOP-06', oracle: 'AC-001.1', title: 'value', steps: [{ action: 'goto', path: '/' }, { action: 'expect_value', target: { label: 'Quantity for Notebook' }, value: '1' }] }], '/__reset');
+  assert.ok(spec.includes('toHaveValue("1")'));
+});

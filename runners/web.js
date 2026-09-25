@@ -117,7 +117,7 @@ export function compileSpec(tests, resetPath) {
   return lines.join('\n');
 }
 
-function compileConfig({ specDir, outputDir, reportFile, baselineDir, baseURL, browsers }) {
+function compileConfig({ specDir, outputDir, reportFile, baselineDir, baseURL, browsers, maxFailures = 0 }) {
   return [
     "import { devices } from '@playwright/test';",
     'export default {',
@@ -126,11 +126,12 @@ function compileConfig({ specDir, outputDir, reportFile, baselineDir, baseURL, b
     '  workers: 1,',
     '  fullyParallel: false,',
     '  retries: 0,',
-    '  timeout: 30000,',
+    '  timeout: 20000,',
+    `  maxFailures: ${J(maxFailures)},`,
     `  reporter: [['json', { outputFile: ${J(reportFile)} }]],`,
     `  snapshotPathTemplate: ${J(`${baselineDir}/{arg}-{projectName}-{platform}{ext}`)},`,
     '  expect: { timeout: 5000, toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },',
-    `  use: { baseURL: ${J(baseURL)}, screenshot: 'on', trace: 'retain-on-failure' },`,
+    `  use: { baseURL: ${J(baseURL)}, screenshot: 'on', trace: 'retain-on-failure', actionTimeout: 5000, navigationTimeout: 10000 },`,
     `  projects: [${browsers.map((b) => `{ name: ${J(b)}, use: { ...devices[${J(BROWSERS[b])}] } }`).join(', ')}],`,
     '};',
     '',
@@ -149,7 +150,7 @@ const sha256File = (file) => createHash('sha256').update(readFileSync(file)).dig
 
 // Runs web tests against a freshly started app in every requested browser. A
 // test passes only when it passes in all of them.
-export async function runWebTests({ repoRoot, project, envName, tests, sink, runId, label, appEnv = {}, expectedBuild, browsers = Object.keys(BROWSERS), updateSnapshots = 'none', schemas }) {
+export async function runWebTests({ repoRoot, project, envName, tests, sink, runId, label, appEnv = {}, expectedBuild, browsers = Object.keys(BROWSERS), updateSnapshots = 'none', schemas, stopAfterFirstFailure = false }) {
   const env = projectEnv(project, envName);
   if (!env.local_app) throw new Error(`Environment ${envName} has no local_app`);
   const baselineDir = join(project.dir, 'web', 'baselines');
@@ -171,7 +172,7 @@ export async function runWebTests({ repoRoot, project, envName, tests, sink, run
     const spec = compileSpec(tests, env.local_app.reset);
     const outputDir = sink.dir(`web/${label}/output`);
     const reportFile = join(sink.dir(`web/${label}`), 'report.json');
-    const config = compileConfig({ specDir, outputDir, reportFile, baselineDir, baseURL: app.baseUrl, browsers });
+    const config = compileConfig({ specDir, outputDir, reportFile, baselineDir, baseURL: app.baseUrl, browsers, maxFailures: stopAfterFirstFailure ? 1 : 0 });
     writeFileSync(join(specDir, 'generated.spec.js'), spec);
     writeFileSync(join(work, 'playwright.config.js'), config);
     sink.write(`web/${label}/generated.spec.js`, spec);

@@ -23,7 +23,9 @@ export async function calibrate({ repoRoot, project, envName, tests, schemas, si
   const baselinePassing = new Set(baseline.results.filter((r) => r.status === 'PASS').map((r) => r.test_id));
   const faultResults = [];
   for (const fault of faults) {
-    const run = await runSuite({ ...common, label: `calibrate/${surface}/fault-${fault.id}`, appEnv: { [faultEnv]: fault.id } });
+    // One failing test proves a fault is caught, so fault runs stop at the first
+    // failure; otherwise a fault that breaks every locator takes hours.
+    const run = await runSuite({ ...common, label: `calibrate/${surface}/fault-${fault.id}`, appEnv: { [faultEnv]: fault.id }, stopAfterFirstFailure: true });
     // A fault is caught only by a test that passed on the healthy build. A test
     // that fails everywhere proves nothing about this fault.
     const failing = run.results.filter((r) => r.status === 'FAIL' && baselinePassing.has(r.test_id)).map((r) => r.test_id);
