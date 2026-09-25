@@ -12,7 +12,7 @@ params:
   surface: { default: api, description: "Surface this PRD covers: api, web or mobile" }
 steps:
   - id: stage-intake
-    run: qa stage --to intake projects/${params.project}/${params.notes} projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml docs/prd-standard.md
+    run: qa stage --to intake projects/${params.project}/${params.notes} projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml projects/${params.project}/prd docs/prd-standard.md
 
   - id: write-prd
     needs: [stage-intake]
@@ -25,7 +25,7 @@ steps:
 
   - id: stage-critique
     needs: [write-prd]
-    run: qa stage --to critique run:steps/write-prd/output.json projects/${params.project}/${params.notes} projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml docs/prd-standard.md docs/test-design-techniques.md
+    run: qa stage --to critique run:steps/write-prd/output.json projects/${params.project}/${params.notes} projects/${params.project}/prd projects/${params.project}/MISSION.md projects/${params.project}/api/openapi.yaml docs/prd-standard.md docs/test-design-techniques.md
 
   - id: critique
     needs: [stage-critique]
