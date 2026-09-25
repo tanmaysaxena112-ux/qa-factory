@@ -21,6 +21,7 @@ Actions:
 - `expect_attribute` with `attribute` (`type`, `inputmode`, `aria-label`, `disabled`) and `value`: for example the keyboard a field opens (`inputmode` `numeric`).
 - `expect_min_size` with `width` and `height` in CSS pixels, which on Android Chrome equal density-independent pixels: a touch target's minimum size.
 - `expect_stacked` and `expect_side_by_side` with `target` and `second`: layout relations.
+- `expect_no_horizontal_scroll`: the page is no wider than the screen, so it cannot scroll sideways.
 
 Targets, as a shopper perceives the page:
 - `{ "role": "button", "name": "Add Notebook to cart" }`; roles `heading`, `alert` and `region` (a section by its heading) work the same way.
@@ -28,6 +29,8 @@ Targets, as a shopper perceives the page:
 - `{ "text": "Your cart is empty." }` for a standalone visible text. A line that combines values ("$4.99 · 25 in stock") is checked with `expect_contains` on its region.
 
 Rules:
+- The message area always exists; check that no message is shown with `expect_text` on `{ "role": "alert" }` and `value` "", never with `expect_hidden`.
+- The runner resets the app before every test. Never call the reset endpoint yourself; `request` is only for product endpoints.
 - Assertions wait for the page, but assert each visible result before the next action or `request`.
 - Literal values only; no templating. Take IDs, prices and stock from the test data and compute money exactly to the cent.
 - Assert exactly what the oracle states. Do not assert anything the PRD leaves undefined.

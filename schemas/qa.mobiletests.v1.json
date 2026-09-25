@@ -33,7 +33,7 @@
           "enum": [
             "goto", "tap", "fill", "rotate", "request",
             "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_value", "expect_enabled", "expect_disabled",
-            "expect_attribute", "expect_min_size", "expect_stacked", "expect_side_by_side"
+            "expect_attribute", "expect_min_size", "expect_stacked", "expect_side_by_side", "expect_no_horizontal_scroll"
           ]
         },
         "target": { "$ref": "#/$defs/target" },

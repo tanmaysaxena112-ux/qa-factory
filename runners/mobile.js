@@ -26,6 +26,7 @@ const NEEDS = {
   expect_min_size: ['target', 'width', 'height'],
   expect_stacked: ['target', 'second'],
   expect_side_by_side: ['target', 'second'],
+  expect_no_horizontal_scroll: [],
 };
 
 export function mobileStepProblems(test) {
@@ -38,7 +39,14 @@ export function mobileStepProblems(test) {
 }
 
 export function loadMobileTests(project, schemas) {
-  return loadSurfaceTests(project, schemas, { surface: 'mobile', schemaId: 'qa.mobiletests.v1', dir: project.mobile?.tests ?? 'mobile/tests', extraProblems: mobileStepProblems });
+  const resetPaths = new Set(Object.values(project.envs ?? {}).map((e) => e.local_app?.reset).filter(Boolean));
+  // The runner resets state before every test; a test that calls the reset
+  // endpoint itself is exercising test infrastructure, not the product.
+  const extraProblems = (t) => [
+    ...mobileStepProblems(t),
+    ...t.steps.filter((s) => s.action === 'request' && resetPaths.has(s.path)).map(() => `${t.test_id} calls the runner's reset endpoint; the runner already resets before every test`),
+  ];
+  return loadSurfaceTests(project, schemas, { surface: 'mobile', schemaId: 'qa.mobiletests.v1', dir: project.mobile?.tests ?? 'mobile/tests', extraProblems });
 }
 
 // XPath string literal that is safe for any value, including quotes.
@@ -176,6 +184,8 @@ function webdriver(base) {
         enabled: (el) => s('GET', `/element/${el}/enabled`),
         rect: (el) => s('GET', `/element/${el}/rect`),
         rotate: (orientation) => s('POST', '/orientation', { orientation: orientation.toUpperCase() }),
+        hideKeyboard: () => s('POST', '/appium/device/hide_keyboard', {}),
+        execute: (script, args = []) => s('POST', '/execute/sync', { script, args }),
         screenshot: async () => Buffer.from(await s('GET', '/screenshot'), 'base64'),
         close: () => s('DELETE', ''),
       };
@@ -220,9 +230,26 @@ async function runStep(session, step, ctx) {
     case 'fill': {
       const el = await one(session, t);
       await session.clear(el);
-      return session.type(el, step.value);
+      await session.type(el, step.value);
+      // A person closes the keyboard before tapping elsewhere. In landscape the
+      // keyboard can cover the page and swallow the next tap.
+      await session.hideKeyboard().catch(() => {});
+      return undefined;
     }
-    case 'rotate': return session.rotate(step.orientation);
+    case 'rotate': {
+      // The emulator sometimes refuses a rotation briefly; this is a device
+      // command retry, never a test retry.
+      let last;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          return await session.rotate(step.orientation);
+        } catch (e) {
+          last = e;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+      throw last;
+    }
     case 'request': {
       const res = await fetch(`${ctx.hostBase}${step.path}`, {
         method: step.method,
@@ -280,6 +307,12 @@ async function runStep(session, step, ctx) {
         const a = await session.rect(await one(session, t));
         const b = await session.rect(await one(session, step.second));
         return (b.x >= a.x + a.width - 1 && b.y < a.y + a.height) || 'second element is not beside the first';
+      });
+    case 'expect_no_horizontal_scroll':
+      // The page is no wider than the screen, so it cannot scroll sideways.
+      return eventually(async () => {
+        const { scroll, view } = await session.execute('return { scroll: document.documentElement.scrollWidth, view: window.innerWidth };');
+        return scroll <= view || `page is ${scroll} CSS px wide on a ${view} CSS px screen`;
       });
     default: throw new Error(`Unknown action ${step.action}`);
   }
