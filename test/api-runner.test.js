@@ -72,6 +72,14 @@ test('a contract break fails a test even when no assertion names the field', asy
   assert.equal(run.fail, 1);
 });
 
+test('a test that fails on the healthy build is never credited with catching a fault', async (t) => {
+  const alwaysFails = [{ test_id: 'API-CART-07', oracle: 'AC-002.1', title: 'expects an impossible status', steps: [add('P-1', 1, 299)] }];
+  const record = await calibrate({ repoRoot: REPO_ROOT, project, envName: 'dev', tests: alwaysFails, schemas, sink: fileSink(t), runId: 'RUN-2026-0925-001' });
+  assert.deepEqual(record.baseline.failing, ['API-CART-07']);
+  assert.equal(record.fault_detection_rate, 0);
+  assert.equal(record.ok, false);
+});
+
 test('calibration passes a strong suite and fails a weak one', async (t) => {
   const strong = await calibrate({ repoRoot: REPO_ROOT, project, envName: 'dev', tests: strongSuite, schemas, sink: fileSink(t), runId: 'RUN-2026-0925-001' });
   assert.equal(strong.baseline.ok, true);

@@ -11,10 +11,11 @@
     "baseline": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["total", "passed", "ok"],
+      "required": ["total", "passed", "failing", "ok"],
       "properties": {
         "total": { "type": "integer", "minimum": 0 },
         "passed": { "type": "integer", "minimum": 0 },
+        "failing": { "type": "array", "items": { "type": "string" } },
         "ok": { "type": "boolean" }
       }
     },

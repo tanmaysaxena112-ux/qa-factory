@@ -16,7 +16,7 @@ Write declarative tests only. There are no scripts. Each test:
 - `title`: the case title.
 - `steps`: ordered HTTP requests. Each has `name`, `request` (`method`, `path`, optional JSON `body`) and `expect`.
 - `expect.status`: the exact status the oracle requires.
-- `expect.json`: assertions on the response body. `path` uses `$.field`, `$.items[0].quantity` style. Use `equals` for exact values, `exists` for presence or absence, `length` for array sizes.
+- `expect.json`: assertions on the response body. `path` uses `$.field`, `$.items[0].quantity` style. Use `equals` for exact values, `exists` for presence or absence, `length` for array sizes, and `contains` to require an array element with the given fields anywhere in the array (use it whenever order is not defined).
 - `expect.contract`: leave it out (the runner checks every response against the API contract by default). Set `false` only for a deliberately malformed request whose response the contract does not describe.
 
 Use literal values only. There is no templating, variable or expression syntax of any kind; a test containing `{{` is rejected. Take IDs, prices and stock from the test data file and write them out. Compute expected money values yourself from the test data, exactly to the cent.

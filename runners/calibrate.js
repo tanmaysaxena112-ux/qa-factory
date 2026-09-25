@@ -16,10 +16,13 @@ export async function calibrate({ repoRoot, project, envName, tests, schemas, si
   const common = { repoRoot, project, envName, tests, schemas, sink, runId };
 
   const baseline = await runApiTests({ ...common, label: 'calibrate/baseline' });
+  const baselinePassing = new Set(baseline.results.filter((r) => r.status === 'PASS').map((r) => r.test_id));
   const faultResults = [];
   for (const fault of faults) {
     const run = await runApiTests({ ...common, label: `calibrate/fault-${fault.id}`, appEnv: { [faultEnv]: fault.id } });
-    const failing = run.results.filter((r) => r.status === 'FAIL').map((r) => r.test_id);
+    // A fault is caught only by a test that passed on the healthy build. A test
+    // that fails everywhere proves nothing about this fault.
+    const failing = run.results.filter((r) => r.status === 'FAIL' && baselinePassing.has(r.test_id)).map((r) => r.test_id);
     faultResults.push({ id: fault.id, detected: failing.length > 0, failing_tests: failing });
   }
   const identity = await runApiTests({ ...common, label: 'calibrate/wrong-identity', expectedBuild: 'calibration-wrong-build' });
@@ -30,7 +33,12 @@ export async function calibrate({ repoRoot, project, envName, tests, schemas, si
   const record = {
     schema: 'qa.calibration.v1',
     project: project.name,
-    baseline: { total: baseline.total, passed: baseline.pass, ok: baseline.total > 0 && baseline.pass === baseline.total },
+    baseline: {
+      total: baseline.total,
+      passed: baseline.pass,
+      failing: baseline.results.filter((r) => r.status !== 'PASS').map((r) => r.test_id),
+      ok: baseline.total > 0 && baseline.pass === baseline.total,
+    },
     faults: faultResults,
     identity_check: { status: identityOk ? 'all tests BLOCKED on wrong build' : `expected all BLOCKED, got ${identity.blocked}/${identity.total}`, ok: identityOk },
     fault_detection_rate: Number(rate.toFixed(4)),

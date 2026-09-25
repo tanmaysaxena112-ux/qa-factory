@@ -86,6 +86,12 @@ async function runStep(baseUrl, step, contract) {
     const got = readPath(parsed, a.path);
     if ('exists' in a && got.found !== a.exists) failures.push(`${a.path} ${a.exists ? 'missing' : 'present but should be absent'}`);
     if ('equals' in a && (!got.found || !same(got.value, a.equals))) failures.push(`${a.path} = ${JSON.stringify(got.value)}, expected ${JSON.stringify(a.equals)}`);
+    // "contains" matches an array element whose listed fields all equal the
+    // expected values, wherever it sits; order-independent by design.
+    if ('contains' in a) {
+      const match = (el) => (a.contains && typeof a.contains === 'object' ? Object.entries(a.contains).every(([k, v]) => el && same(el[k], v)) : same(el, a.contains));
+      if (!got.found || !Array.isArray(got.value) || !got.value.some(match)) failures.push(`${a.path} has no element matching ${JSON.stringify(a.contains)}`);
+    }
     if ('length' in a && (!got.found || !Array.isArray(got.value) || got.value.length !== a.length)) {
       failures.push(`${a.path} length ${Array.isArray(got.value) ? got.value.length : 'n/a'}, expected ${a.length}`);
     }

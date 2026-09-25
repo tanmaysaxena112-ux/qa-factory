@@ -1,0 +1,1570 @@
+{
+  "schema": "qa.apitests.v1",
+  "project": "demo-shop",
+  "tests": [
+    {
+      "test_id": "API-CART-01",
+      "oracle": "AC-001.1",
+      "title": "Get product catalogue returns required fields",
+      "steps": [
+        {
+          "name": "List products",
+          "request": {
+            "method": "GET",
+            "path": "/products"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$",
+                "length": 4
+              },
+              {
+                "path": "$[0].id",
+                "exists": true
+              },
+              {
+                "path": "$[0].name",
+                "exists": true
+              },
+              {
+                "path": "$[0].price",
+                "exists": true
+              },
+              {
+                "path": "$[0].stock",
+                "exists": true
+              },
+              {
+                "path": "$[1].id",
+                "exists": true
+              },
+              {
+                "path": "$[1].name",
+                "exists": true
+              },
+              {
+                "path": "$[1].price",
+                "exists": true
+              },
+              {
+                "path": "$[1].stock",
+                "exists": true
+              },
+              {
+                "path": "$[2].id",
+                "exists": true
+              },
+              {
+                "path": "$[2].name",
+                "exists": true
+              },
+              {
+                "path": "$[2].price",
+                "exists": true
+              },
+              {
+                "path": "$[2].stock",
+                "exists": true
+              },
+              {
+                "path": "$[3].id",
+                "exists": true
+              },
+              {
+                "path": "$[3].name",
+                "exists": true
+              },
+              {
+                "path": "$[3].price",
+                "exists": true
+              },
+              {
+                "path": "$[3].stock",
+                "exists": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-02",
+      "oracle": "AC-001.2",
+      "title": "Catalogue includes out-of-stock products",
+      "steps": [
+        {
+          "name": "List products and confirm zero-stock product present",
+          "request": {
+            "method": "GET",
+            "path": "/products"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$",
+                "contains": {
+                  "id": "P-4",
+                  "stock": 0
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-03",
+      "oracle": "AC-001.3",
+      "title": "Product prices are exact numeric cent values",
+      "steps": [
+        {
+          "name": "List products and verify exact cent prices",
+          "request": {
+            "method": "GET",
+            "path": "/products"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$[0].price",
+                "equals": 4.99
+              },
+              {
+                "path": "$[1].price",
+                "equals": 1.25
+              },
+              {
+                "path": "$[2].price",
+                "equals": 39.99
+              },
+              {
+                "path": "$[3].price",
+                "equals": 15.5
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-04",
+      "oracle": "AC-002.1",
+      "title": "Add new product to empty cart with minimum quantity",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.product_id",
+                "equals": "P-1"
+              },
+              {
+                "path": "$.quantity",
+                "equals": 1
+              },
+              {
+                "path": "$.line_total",
+                "equals": 4.99
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-05",
+      "oracle": "AC-002.2",
+      "title": "Adding the same product twice merges into one line",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 2",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 2
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Add P-1 quantity 3 again",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 3
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.product_id",
+                "equals": "P-1"
+              },
+              {
+                "path": "$.quantity",
+                "equals": 5
+              },
+              {
+                "path": "$.line_total",
+                "equals": 24.95
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify single merged line",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].product_id",
+                "equals": "P-1"
+              },
+              {
+                "path": "$.items[0].quantity",
+                "equals": 5
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-06",
+      "oracle": "AC-002.3",
+      "title": "Add item with missing quantity is rejected",
+      "steps": [
+        {
+          "name": "Add P-1 with no quantity",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1"
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-07",
+      "oracle": "AC-002.3",
+      "title": "Add item with non-integer quantity is rejected",
+      "steps": [
+        {
+          "name": "Add P-1 with quantity 2.5",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 2.5
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-08",
+      "oracle": "AC-002.3",
+      "title": "Add item with quantity zero is rejected",
+      "steps": [
+        {
+          "name": "Add P-1 with quantity 0",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 0
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-09",
+      "oracle": "AC-002.3",
+      "title": "Merged add that would exceed the 10-per-line limit is rejected",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 6",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 6
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 6
+              }
+            ]
+          }
+        },
+        {
+          "name": "Add P-1 quantity 5 (combined 11)",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 5
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify line unchanged at 6",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].product_id",
+                "equals": "P-1"
+              },
+              {
+                "path": "$.items[0].quantity",
+                "equals": 6
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-10",
+      "oracle": "AC-002.4",
+      "title": "Add item with missing product_id is rejected",
+      "steps": [
+        {
+          "name": "Add item with no product_id",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify empty",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-11",
+      "oracle": "AC-002.4",
+      "title": "Add item with non-string product_id is rejected",
+      "steps": [
+        {
+          "name": "Add item with numeric product_id",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": 123,
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify empty",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-12",
+      "oracle": "AC-002.4",
+      "title": "Add item with empty string product_id is rejected",
+      "steps": [
+        {
+          "name": "Add item with empty string product_id",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify empty",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-13",
+      "oracle": "AC-002.4",
+      "title": "Add item with whitespace-only product_id is rejected",
+      "steps": [
+        {
+          "name": "Add item with whitespace-only product_id",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "   ",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify empty",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-14",
+      "oracle": "AC-002.5",
+      "title": "Add item with unknown product_id returns not found",
+      "steps": [
+        {
+          "name": "Add unknown product",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "does-not-exist-id",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 404,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "product_not_found"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-15",
+      "oracle": "AC-002.6",
+      "title": "Add item whose combined quantity exceeds stock is rejected",
+      "steps": [
+        {
+          "name": "Add P-3 with quantity exceeding stock",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 4
+            }
+          },
+          "expect": {
+            "status": 409,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "insufficient_stock"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-16",
+      "oracle": "AC-002.7",
+      "title": "Add item with malformed JSON body is rejected",
+      "steps": [
+        {
+          "name": "Send malformed JSON body",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "raw_body": "{\"product_id\": \"x\", \"quantity\": 1"
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-17",
+      "oracle": "EC-002.1",
+      "title": "Adding exactly 10 units on a new line is accepted",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 10",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 10
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 10
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-18",
+      "oracle": "EC-002.2",
+      "title": "Adding exactly the remaining stock is accepted",
+      "steps": [
+        {
+          "name": "Add P-3 quantity equal to remaining stock",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 3
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 3
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-19",
+      "oracle": "EC-002.2",
+      "title": "Adding one more than the remaining stock is rejected",
+      "steps": [
+        {
+          "name": "Add P-3 quantity one more than stock",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 4
+            }
+          },
+          "expect": {
+            "status": 409,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "insufficient_stock"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-20",
+      "oracle": "EC-002.3",
+      "title": "When both the 10-per-line and stock limits are broken, the quantity rule wins",
+      "steps": [
+        {
+          "name": "Add P-3 quantity 11 (breaks both limits)",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 11
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-21",
+      "oracle": "AC-003.1",
+      "title": "View cart returns items, currency and total",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Get cart",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "exists": true
+              },
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.currency",
+                "exists": true
+              },
+              {
+                "path": "$.total",
+                "exists": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-22",
+      "oracle": "AC-003.2",
+      "title": "Cart currency is always USD",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Get cart",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.currency",
+                "equals": "USD"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-23",
+      "oracle": "AC-003.3",
+      "title": "Line total equals price times quantity with no floating point error",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 3",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 3
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Get cart and verify exact line total",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items[0].line_total",
+                "equals": 14.97
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-24",
+      "oracle": "AC-003.4",
+      "title": "Cart total equals the sum of all line totals",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 2",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 2
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Add P-2 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-2",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Get cart and verify total",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.total",
+                "equals": 11.23
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-25",
+      "oracle": "EC-003.1",
+      "title": "Empty cart shows zero total and empty items",
+      "steps": [
+        {
+          "name": "Get empty cart",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              },
+              {
+                "path": "$.total",
+                "equals": 0
+              },
+              {
+                "path": "$.currency",
+                "equals": "USD"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-26",
+      "oracle": "AC-004.1",
+      "title": "Remove an existing line from the cart",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Remove P-1",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 204
+          }
+        },
+        {
+          "name": "Get cart and verify line removed",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-27",
+      "oracle": "AC-004.2",
+      "title": "Remove a product not in the cart returns not_in_cart",
+      "steps": [
+        {
+          "name": "Remove P-1 without adding it",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 404,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "not_in_cart"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-28",
+      "oracle": "EC-004.1",
+      "title": "After removal the cart total reflects only the remaining lines",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Add P-2 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-2",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Get cart before removal",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.total",
+                "equals": 6.24
+              }
+            ]
+          }
+        },
+        {
+          "name": "Remove P-1",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 204
+          }
+        },
+        {
+          "name": "Get cart after removal",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].product_id",
+                "equals": "P-2"
+              },
+              {
+                "path": "$.total",
+                "equals": 1.25
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-29",
+      "oracle": "AC-002.6",
+      "title": "Merging into an existing line that would exceed stock is rejected",
+      "steps": [
+        {
+          "name": "Add P-3 quantity 2",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 2
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 2
+              }
+            ]
+          }
+        },
+        {
+          "name": "Add P-3 quantity 2 more (combined 4, exceeds stock 3)",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 2
+            }
+          },
+          "expect": {
+            "status": 409,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "insufficient_stock"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify line unchanged at 2",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].product_id",
+                "equals": "P-3"
+              },
+              {
+                "path": "$.items[0].quantity",
+                "equals": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-30",
+      "oracle": "AC-002.6",
+      "title": "Adding a product with zero stock is rejected as insufficient stock",
+      "steps": [
+        {
+          "name": "Add P-4 (zero stock) quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-4",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 409,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "insufficient_stock"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-31",
+      "oracle": "AC-002.3",
+      "title": "Add item with quantity given as a string is rejected",
+      "steps": [
+        {
+          "name": "Add P-1 with quantity as string",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": "5"
+            }
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_quantity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-32",
+      "oracle": "AC-002.3",
+      "title": "Merging two adds that combine to exactly the 10-per-line maximum is accepted",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 4",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 4
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 4
+              }
+            ]
+          }
+        },
+        {
+          "name": "Add P-1 quantity 6 more (combined 10)",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 6
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 10
+              },
+              {
+                "path": "$.line_total",
+                "equals": 49.9
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify single merged line at 10",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].product_id",
+                "equals": "P-1"
+              },
+              {
+                "path": "$.items[0].quantity",
+                "equals": 10
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-33",
+      "oracle": "AC-002.1",
+      "title": "Removing a line then re-adding the same product starts a fresh line",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 3",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 3
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 3
+              }
+            ]
+          }
+        },
+        {
+          "name": "Remove P-1",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 204
+          }
+        },
+        {
+          "name": "Get cart and verify line removed",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "Re-add P-1 quantity 2",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 2
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 2
+              },
+              {
+                "path": "$.line_total",
+                "equals": 9.98
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get cart and verify fresh line quantity",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items",
+                "length": 1
+              },
+              {
+                "path": "$.items[0].quantity",
+                "equals": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-34",
+      "oracle": "AC-004.2",
+      "title": "Removing the same product twice in a row returns not_in_cart on the second attempt",
+      "steps": [
+        {
+          "name": "Add P-1 quantity 1",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-1",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201
+          }
+        },
+        {
+          "name": "Remove P-1 first time",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 204
+          }
+        },
+        {
+          "name": "Remove P-1 second time",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 404,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "not_in_cart"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
