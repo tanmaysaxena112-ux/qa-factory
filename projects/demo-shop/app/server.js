@@ -15,6 +15,10 @@ const PRODUCTS = [
   { id: 'P-4', name: 'Umbrella', price_cents: 1550, stock: 0 },
 ];
 
+const BASE_CATALOGUE = PRODUCTS.map((p) => ({ ...p }));
+// Test fixture from escape ESC-001: a product whose name contains markup.
+const MARKUP_PRODUCT = { id: 'P-9', name: 'Widget <img src=x onerror=alert(1)>', price_cents: 250, stock: 5 };
+
 let cart = new Map();
 
 const money = (cents) => Math.round(cents) / 100;
@@ -31,8 +35,17 @@ function cartView() {
   return view;
 }
 
+// Sent on every response. The page loads scripts and styles only from this
+// origin, so injected markup cannot run and the page cannot be framed.
+const SECURITY_HEADERS = {
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer',
+  'x-frame-options': 'DENY',
+};
+
 function send(res, status, body) {
-  res.writeHead(status, body === undefined ? {} : { 'content-type': 'application/json' });
+  res.writeHead(status, { ...SECURITY_HEADERS, ...(body === undefined ? {} : { 'content-type': 'application/json' }) });
   res.end(body === undefined ? undefined : JSON.stringify(body));
 }
 
@@ -57,15 +70,23 @@ const server = createServer(async (req, res) => {
   const path = url.pathname;
 
   if (req.method === 'GET' && path === '/health') return send(res, 200, { status: 'ok', build: BUILD });
-  if (req.method === 'GET' && (path === '/' || path === '/app.js')) {
-    const file = path === '/' ? 'index.html' : 'app.js';
+  const STATIC = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/app.css': ['app.css', 'text/css'] };
+  if (req.method === 'GET' && STATIC[path]) {
+    const [file, type] = STATIC[path];
     let body = readFileSync(new URL(`./public/${file}`, import.meta.url), 'utf8');
-    if (file === 'index.html') body = body.replace('<script src="/app.js"', `<script>window.DEMO_FAULT = ${JSON.stringify(FAULT)};</script>\n  <script src="/app.js"`);
-    res.writeHead(200, { 'content-type': file === 'app.js' ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8' });
+    // The seeded fault is passed as a data attribute, not an inline script,
+    // so the strict content security policy holds.
+    if (file === 'index.html') body = body.replace('data-fault=""', `data-fault="${FAULT.replace(/[^a-z-]/g, '')}"`);
+    res.writeHead(200, { ...SECURITY_HEADERS, 'content-type': `${type}; charset=utf-8` });
     return res.end(body);
   }
   if (req.method === 'POST' && path === '/__reset') {
     cart = new Map();
+    PRODUCTS.splice(0, PRODUCTS.length, ...BASE_CATALOGUE.map((p) => ({ ...p })));
+    return send(res, 204);
+  }
+  if (req.method === 'POST' && path === '/__fixtures/markup-product') {
+    if (!PRODUCTS.some((p) => p.id === MARKUP_PRODUCT.id)) PRODUCTS.push({ ...MARKUP_PRODUCT });
     return send(res, 204);
   }
   if (req.method === 'GET' && path === '/products') {

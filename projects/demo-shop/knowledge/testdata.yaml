@@ -10,3 +10,7 @@ notes:
   - P-3 has low stock, for stock-limit tests.
   - P-4 is out of stock, for zero-stock tests.
   - Use P-1 (stock 25) or P-2 (stock 100) for 10-per-line limit tests.
+fixtures:
+  # Added after escape ESC-001. POST /__fixtures/markup-product adds this product
+  # until the next reset; tests call it with a request step before loading the page.
+  markup_product: { id: P-9, name: "Widget <img src=x onerror=alert(1)>", price: 2.50, stock: 5 }

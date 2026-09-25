@@ -1,0 +1,27 @@
+schema: qa.workflow.v1
+name: escape-analysis
+description: >
+  A defect escaped to production. The Escape Analyst traces it to the missing
+  requirement, case, test or data and proposes changes; the QA Lead accepts or
+  rejects each one.
+max_cost_usd: 2
+params:
+  project: { required: true, description: Project folder name }
+  escape: { required: true, description: "Escape ID, for example ESC-001" }
+steps:
+  - id: stage
+    run: qa stage --to escape projects/${params.project}/escapes/${params.escape}.md projects/${params.project}/prd projects/${params.project}/cases projects/${params.project}/api/tests projects/${params.project}/web/tests projects/${params.project}/mobile/tests docs/test-design-techniques.md
+
+  - id: analyse
+    needs: [stage]
+    agent: escape-analyst
+    cwd: ${run.dir}/staged/escape
+    prompt: |
+      Analyse escape ${params.escape} of project ${params.project}. INDEX.txt lists every file.
+    output: qa.escape.v1
+    timeout_seconds: 1200
+
+  - id: qa-lead
+    needs: [analyse]
+    gate: qa-lead
+    message: Accept or reject each proposal; accepted ones are applied by pull request and recorded in the technique catalogue.

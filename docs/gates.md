@@ -21,3 +21,5 @@ Every gate blocks progress. None has an exception.
 | 15 | Escape analysis | Proposals only; the QA Lead accepts each one | QA Lead |
 
 Rework after `REWORK_REQUIRED` is capped at two cycles, then escalates to the QA Lead.
+
+A release cannot be approved with risks while a manual case covering a high-risk requirement or a security-relevant edge case is unexecuted. The case is run by a person and its result recorded first, or the release is refused. Added after escape ESC-001.

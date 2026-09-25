@@ -8,7 +8,7 @@ const sha = 'a'.repeat(64);
 
 test('every contract schema compiles in strict mode', () => {
   assert.deepEqual(schemas.ids, [
-    'qa.apitests.v1', 'qa.calibration.v1', 'qa.cases.v1', 'qa.critique.v1', 'qa.edgecases.v1', 'qa.finding.v1', 'qa.mobiletests.v1', 'qa.prd-draft.v1',
+    'qa.apitests.v1', 'qa.calibration.v1', 'qa.cases.v1', 'qa.critique.v1', 'qa.edgecases.v1', 'qa.escape.v1', 'qa.finding.v1', 'qa.mobiletests.v1', 'qa.prd-draft.v1',
     'qa.prd.v1', 'qa.report.v1', 'qa.result.v1', 'qa.review.v1', 'qa.scan.v1', 'qa.selftest.v1', 'qa.testplan.v1', 'qa.triage.v1', 'qa.webtests.v1', 'qa.workflow.v1',
   ]);
 });

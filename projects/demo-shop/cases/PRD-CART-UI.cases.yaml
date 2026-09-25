@@ -114,8 +114,7 @@ cases:
     surface: web
     technique: data_extreme
     preconditions:
-      - The catalogue includes Product M whose configured name contains markup
-        characters, for example "Widget <b>Pro</b>".
+      - The markup_product fixture is loaded (POST /__fixtures/markup-product)
     steps:
       - Open the site root URL.
       - Locate Product M in the Products section.
@@ -125,9 +124,6 @@ cases:
         content and not an interpreted HTML element (for example, no bold
         styling is produced by the name).
     source: test_designer
-    manual:
-      reason: The fixed catalogue has no product name containing markup, so the case
-        needs a prepared build; checked by a person.
   - id: WEB-CART-08
     title: Quantity field is labelled per product and starts at 1
     requirement: REQ-003

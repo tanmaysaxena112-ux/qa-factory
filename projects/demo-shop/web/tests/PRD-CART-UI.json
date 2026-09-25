@@ -1957,6 +1957,56 @@
           }
         }
       ]
+    },
+    {
+      "test_id": "WEB-CART-07",
+      "oracle": "EC-002.2",
+      "title": "A product name containing markup is shown literally, in the list and in the cart",
+      "steps": [
+        {
+          "action": "request",
+          "method": "POST",
+          "path": "/__fixtures/markup-product"
+        },
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "text": "Widget <img src=x onerror=alert(1)>"
+          },
+          "value": "Widget <img src=x onerror=alert(1)>"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "button",
+            "name": "Add Widget <img src=x onerror=alert(1)> to cart"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Widget <img src=x onerror=alert(1)> to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Widget <img src=x onerror=alert(1)> × 1"
+          }
+        },
+        {
+          "action": "expect_count",
+          "target": {
+            "role": "img"
+          },
+          "count": 0
+        }
+      ]
     }
   ]
 }

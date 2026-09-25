@@ -34,6 +34,20 @@ function reviewerAgreement(store) {
   return { compared, rate: compared ? agreed / compared : null };
 }
 
+// Escape rate: defects found after release divided by all defects found. QA's
+// finds are the product defects triage recorded; escapes are the analysed
+// reports in the project's escapes folder.
+function escapeRate(store, project) {
+  const dir = join(project.dir, 'escapes');
+  const escapes = existsSync(dir) ? readdirSync(dir).filter((f) => /^ESC-\d{3}\.md$/.test(f)).length : 0;
+  let found = 0;
+  for (const run of store.query('runs').filter((r) => /regression$/.test(r.workflow))) {
+    const triage = store.getStep(run.id, 'triage')?.output?.value;
+    found += (triage?.findings ?? []).filter((f) => f.cause === 'product_defect').length;
+  }
+  return { escapes, found, rate: escapes + found ? escapes / (escapes + found) : null };
+}
+
 export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot }) {
   const history = store.query('history', { project: project.name });
   const flakes = flakiness(history, store.query('reruns'));
@@ -41,6 +55,7 @@ export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot
   const drifted = drift({ repoRoot, project });
   const calibrations = latestCalibrations(evidenceRoot);
   const agreement = reviewerAgreement(store);
+  const escapes = escapeRate(store, project);
   const runs = store.query('runs');
   const passing = coverage.filter((c) => c.latest === 'PASS').length;
   const faults = Object.values(calibrations).reduce((acc, c) => ({ caught: acc.caught + c.faults.filter((f) => f.detected).length, total: acc.total + c.faults.length }), { caught: 0, total: 0 });
@@ -50,7 +65,7 @@ export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot
     { name: 'Requirement coverage', value: coverage.length ? passing / coverage.length : null, goal: '100%', detail: `${passing} of ${coverage.length} acceptance criteria pass their latest automated run` },
     { name: 'Fault detection rate', value: faults.total ? faults.caught / faults.total : null, goal: '99% or more', detail: `${faults.caught} of ${faults.total} seeded faults caught in the latest calibration of each surface` },
     { name: 'Verdict accuracy', value: null, goal: '99% or more', detail: 'UNKNOWN: needs the QA Lead weekly 5% audit of passed tests, none recorded yet' },
-    { name: 'Defect escape rate', value: null, goal: 'under 1%', detail: 'UNKNOWN: no production escapes recorded yet' },
+    { name: 'Defect escape rate', value: escapes.rate, goal: 'under 1%', detail: escapes.rate === null ? 'UNKNOWN: no defects recorded yet' : `${escapes.escapes} escaped after release, ${escapes.found} found by QA before release` },
   ];
   const health = [
     { name: 'Flake rate', value: pct(flakes.rate), detail: `${flakes.flaky.length} of ${flakes.tests} tests` },
@@ -58,7 +73,8 @@ export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot
     { name: 'Spend', value: `$${spend.toFixed(2)}`, detail: `${runs.length} runs, $${(spend / Math.max(runs.length, 1)).toFixed(3)} per run` },
     { name: 'Drift', value: String(drifted.length), detail: drifted.length ? 'PRDs changed after their cases or tests' : 'none' },
   ];
-  const tone = (v) => (v === null ? 'unknown' : v >= 0.99 ? 'good' : v >= 0.9 ? 'warn' : 'bad');
+  // Escape rate is better when lower; every other target is better when higher.
+  const tone = (v, lowerIsBetter = false) => (v === null ? 'unknown' : lowerIsBetter ? (v < 0.01 ? 'good' : v < 0.05 ? 'warn' : 'bad') : v >= 0.99 ? 'good' : v >= 0.9 ? 'warn' : 'bad');
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -78,7 +94,7 @@ td.n{font-variant-numeric:tabular-nums}
 </style></head><body><main>
 <header><h1>QA Factory Dashboard</h1><p>Project ${esc(project.name)} · generated from run history, calibration records and the PRDs. Nothing on this page is estimated.</p></header>
 <section><h2>Quality targets</h2><div class="grid">
-${targets.map((t) => `<div class="card"><span>${esc(t.name)}</span><span class="v ${tone(t.value)}">${pct(t.value)}</span><p>Goal ${esc(t.goal)}. ${esc(t.detail)}</p></div>`).join('')}
+${targets.map((t) => `<div class="card"><span>${esc(t.name)}</span><span class="v ${tone(t.value, t.name === 'Defect escape rate')}">${pct(t.value)}</span><p>Goal ${esc(t.goal)}. ${esc(t.detail)}</p></div>`).join('')}
 </div></section>
 <section><h2>Pipeline health</h2><div class="grid">
 ${health.map((h) => `<div class="card"><span>${esc(h.name)}</span><span class="v">${esc(h.value)}</span><p>${esc(h.detail)}</p></div>`).join('')}

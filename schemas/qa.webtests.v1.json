@@ -17,7 +17,7 @@
       "minProperties": 1,
       "maxProperties": 2,
       "properties": {
-        "role": { "type": "string", "enum": ["button", "heading", "textbox", "spinbutton", "listitem", "list", "alert", "region", "link", "checkbox"] },
+        "role": { "type": "string", "enum": ["button", "heading", "textbox", "spinbutton", "listitem", "list", "alert", "region", "link", "checkbox", "img"] },
         "name": { "type": "string" },
         "label": { "type": "string" },
         "testid": { "type": "string" },

@@ -30,6 +30,9 @@ faults:
   - id: ui-layout-shift
     surface: web
     description: The product and cart columns swap widths
+  - id: ui-unsafe-names
+    surface: web
+    description: Product names are parsed as markup (the defect behind escape ESC-001)
   - id: ui-tiny-targets
     surface: mobile
     description: Buttons shrink below a comfortable touch size

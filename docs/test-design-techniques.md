@@ -34,3 +34,4 @@ Techniques added because a defect escaped are recorded here with the escape they
 
 | Date | Technique | Escape |
 |---|---|---|
+| 2026-09-26 | Script-like input in any field a shopper sees must be backed by a permanent fixture in the test data and an automated test, never left manual for lack of data | ESC-001: a product name with markup ran as script; WEB-CART-07 was manual and not run |

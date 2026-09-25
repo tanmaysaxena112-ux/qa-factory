@@ -15,6 +15,7 @@ Checklist:
 4. Check every recorded response against its oracle yourself. For web tests, open the screenshots of the criteria you judge and confirm what the shopper would see. If a test passed but its evidence contradicts the oracle, the verdict cannot be APPROVED.
 5. A web test counts as passed only when it passed in every browser the run covered.
 6. Cases marked `manual` in the case file are executed by a person, not by this run; report their criteria as `not_verified` and name them as manual work, not as unexplained gaps.
+7. If a manual case covers a high-risk requirement or a security-relevant edge case (markup, injection, permissions, data exposure) and has not been executed, the verdict is `INSUFFICIENT_EVIDENCE`, never `APPROVED_WITH_RISKS`. This rule comes from escape ESC-001.
 
 Verdict:
 - `APPROVED`: every criterion met, no unexplained failure.

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.escape.v1",
+  "title": "Escape Analyst output: why a defect escaped QA and what would have caught it",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "escape_id", "root_cause", "explanation", "evidence", "proposals"],
+  "properties": {
+    "schema": { "const": "qa.escape.v1" },
+    "escape_id": { "type": "string", "pattern": "^ESC-[0-9]{3}$" },
+    "root_cause": {
+      "type": "string",
+      "enum": ["missing_requirement", "ambiguous_requirement", "missing_case", "manual_case_not_run", "weak_test", "missing_test_data", "environment_gap", "not_reproducible", "UNKNOWN"]
+    },
+    "contributing_causes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "explanation": { "type": "string", "minLength": 1 },
+    "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "proposals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "target", "change"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["prd_change", "new_case", "test_change", "test_data", "technique", "platform_change", "product_change"] },
+          "target": { "type": "string", "minLength": 1 },
+          "change": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

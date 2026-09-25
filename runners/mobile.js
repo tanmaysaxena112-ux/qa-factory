@@ -89,9 +89,14 @@ async function onlineDevice() {
   return out.stdout.split('\n').map((l) => l.trim().split(/\s+/)).find((p) => p.length === 2 && p[1] === 'device')?.[0] ?? null;
 }
 
+let bootedSerial = null;
+
 // Uses an attached device or running emulator; otherwise boots the configured
-// emulator read-only, so the virtual device itself is never modified.
+// emulator read-only, so the virtual device itself is never modified. An
+// emulator this process booted stays up for every suite the process runs (a
+// calibration runs six) and is shut down when the process exits.
 async function ensureDevice(android) {
+  if (bootedSerial) return { ok: true, serial: bootedSerial, started: false };
   const existing = await onlineDevice();
   if (existing) return { ok: true, serial: existing, started: false };
   const avd = process.env[android.avd_env ?? 'QA_ANDROID_AVD'];
@@ -105,7 +110,11 @@ async function ensureDevice(android) {
   const deadline = Date.now() + 240000;
   while (Date.now() < deadline) {
     const serial = await onlineDevice();
-    if (serial && (await adb(['-s', serial, 'shell', 'getprop', 'sys.boot_completed'])).stdout.trim() === '1') return { ok: true, serial, started: true };
+    if (serial && (await adb(['-s', serial, 'shell', 'getprop', 'sys.boot_completed'])).stdout.trim() === '1') {
+      bootedSerial = serial;
+      process.once('exit', () => spawnSync(join(ANDROID_SDK, 'platform-tools', 'adb'), ['-s', serial, 'emu', 'kill'], { timeout: 10000 }));
+      return { ok: true, serial, started: true };
+    }
     await new Promise((r) => setTimeout(r, 3000));
   }
   return { ok: false, detail: `emulator ${avd} did not finish booting within 4 minutes` };
@@ -347,14 +356,15 @@ export async function runMobileTests({ repoRoot, project, envName, tests, schema
 
     const device = await ensureDevice(env.android);
     if (!device.ok) return finish(blockAll(device.detail));
-    if (device.started) cleanups.push(() => adb(['-s', device.serial, 'emu', 'kill']));
     const appium = await startAppium(repoRoot);
     cleanups.push(appium.stop);
     if (!appium.ok) return finish(blockAll(appium.detail));
 
     const port = new URL(app.baseUrl).port;
     const ctx = { deviceBase: `http://${env.android.host_address}:${port}`, hostBase: app.baseUrl };
-    const session = await webdriver(appium.url).newSession({
+    let session;
+    try {
+      session = await webdriver(appium.url).newSession({
       platformName: 'Android',
       browserName: 'Chrome',
       'appium:automationName': 'UiAutomator2',
@@ -362,7 +372,11 @@ export async function runMobileTests({ repoRoot, project, envName, tests, schema
       'appium:chromedriverAutodownload': true,
       'appium:newCommandTimeout': 180,
       'appium:chromeOptions': { args: ['--disable-fre', '--no-first-run', '--no-default-browser-check'] },
-    });
+      });
+    } catch (e) {
+      // A device or driver that cannot open a session is a missing capability.
+      return finish(blockAll(`could not open a browser session on ${device.serial}: ${e.message}`));
+    }
     cleanups.push(() => session.close());
     const deps = async () => [{ name: 'app', status: await probeHealth(`${app.baseUrl}${env.local_app.health}`) }, { name: 'android-device', status: 'up' }];
     const start = await deps();
