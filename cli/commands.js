@@ -12,6 +12,8 @@ import { loadApiTests, runApiTests } from '../runners/api.js';
 import { BROWSERS, loadWebTests, runWebTests } from '../runners/web.js';
 import { loadMobileTests, runMobileTests } from '../runners/mobile.js';
 import { calibrate } from '../runners/calibrate.js';
+import { flakiness, ingestRun } from '../engine/history.js';
+import { coverageMap, drift } from '../engine/insights.js';
 import { loadProject } from '../runners/project.js';
 
 const FAILED = 1;
@@ -364,6 +366,43 @@ export async function runCommand(command, rest, values) {
       return 0;
     }
     need(false, 'Usage: qa mobile validate|run|rerun --project <name>');
+  }
+
+  if (command === 'history' || command === 'flakes' || command === 'coverage' || command === 'drift') {
+    const store = openStore(paths.db);
+    try {
+      if (command === 'history') {
+        if (rest[0] !== 'backfill') need(false, 'Usage: qa history backfill');
+        // Loads sealed runs recorded before history existed.
+        let n = 0;
+        for (const run of store.query('runs')) {
+          const full = store.getRun(run.id);
+          const dir = join(paths.evidence, run.id);
+          if (existsSync(dir) && ['completed', 'failed', 'rejected'].includes(full.status)) {
+            ingestRun({ store, evidenceDir: dir, run: full });
+            n += 1;
+          }
+        }
+        console.log(`history: ${n} finished runs ingested`);
+        return 0;
+      }
+      if (command === 'flakes') {
+        const report = flakiness(store.query('history', { project: values.project }), store.query('reruns'));
+        print(values.json, report, `${report.flaky.length} flaky of ${report.tests} tests (${(report.rate * 100).toFixed(1)}%)${report.flaky.map((f) => `\n  ${f.surface} ${f.test_id}  runs ${f.runs}  mixed on ${f.mixed_commits.join(',') || '-'}  unreproduced ${f.unreproduced_reruns.join(',') || '-'}`).join('')}`);
+        return 0;
+      }
+      const project = loadProject(paths.repoRoot, need(values.project, `Usage: qa ${command} --project <name>`));
+      if (command === 'coverage') {
+        const rows = coverageMap({ repoRoot: paths.repoRoot, project, schemas, history: store.query('history', { project: project.name }) });
+        print(values.json, rows, rows.map((r) => `${r.prd_id.padEnd(16)} ${r.criterion.padEnd(9)} ${r.risk.padEnd(6)} cases ${String(r.cases).padStart(2)}  auto ${String(r.automated).padStart(2)}  manual ${r.manual}  ${r.latest}`).join('\n'));
+        return rows.some((r) => r.latest === 'FAIL') ? FAILED : 0;
+      }
+      const findings = drift({ repoRoot: paths.repoRoot, project });
+      print(values.json, findings, findings.length ? findings.map((f) => `DRIFT  ${f.prd_id} changed ${f.prd_changed}; ${f.stale} last changed ${f.follower_changed}`).join('\n') : 'no drift: every case file and test file is newer than its PRD');
+      return findings.length ? FAILED : 0;
+    } finally {
+      store.close();
+    }
   }
 
   if (command === 'report') {

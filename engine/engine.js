@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { appendAudit } from './audit.js';
+import { ingestRun } from './history.js';
 import { loadConfig, resolvePaths } from './config.js';
 import { createEvidence } from './evidence.js';
 import { createClaudeProvider } from './providers/claude.js';
@@ -62,6 +64,11 @@ export function createEngine({ repoRoot, dataRoot, env = process.env } = {}) {
       })),
       decisions: store.getSteps(runId).map((s) => store.getDecision(runId, s.step_id)).filter(Boolean),
     });
+    try {
+      ingestRun({ store, evidenceDir: evidence.runDir(runId), run: store.getRun(runId) });
+    } catch (e) {
+      audit({ event: 'history_ingest_failed', run: runId, error: e.message });
+    }
     evidence.seal(runId);
     audit({ event: 'run_end', run: runId, status, error });
   }
@@ -179,6 +186,9 @@ export function createEngine({ repoRoot, dataRoot, env = process.env } = {}) {
       evidence.write(runId, 'workflow.json', workflow);
       evidence.write(runId, 'params.json', resolved);
       store.createRun({ id: runId, workflow: name, params: resolved, steps: workflow.steps.map((s) => ({ id: s.id, kind: stepKind(s) })) });
+      // The commit under test lets history tell a flaky test from a changed one.
+      const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: paths.repoRoot, encoding: 'utf8' });
+      if (head.status === 0) store.setRunCommit(runId, head.stdout.trim());
       audit({ event: 'run_start', run: runId, workflow: name });
       return execute(runId);
     },

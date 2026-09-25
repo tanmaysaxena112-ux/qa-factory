@@ -39,6 +39,10 @@ const HELP = `qa: QA Factory command line
   qa web baseline --project <p> [--update]   Create missing (or, with --update, rewrite changed) baselines for review
   qa mobile validate --project <p>    Check every mobile test implements an approved case
   qa mobile run --project <p> [--plan f] [--only IDS] [--out dir]   Real Android Chrome via Appium
+  qa history backfill                 Record results of runs sealed before history existed
+  qa flakes [--project <p>]           Tests with mixed results on one commit or unreproduced re-runs
+  qa coverage --project <p>           Criteria x cases x automated tests x latest status
+  qa drift --project <p>              PRDs changed after their cases or tests
   qa report verify --surface <s>      Fail the run if the report's counts differ from the results
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
   qa promote --step <id> --to <path>  Write approved agent output into the project

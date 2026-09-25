@@ -34,6 +34,24 @@ CREATE TABLE IF NOT EXISTS decisions (
   decided_at TEXT NOT NULL,
   PRIMARY KEY (run_id, step_id)
 );
+CREATE TABLE IF NOT EXISTS results (
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  project TEXT,
+  surface TEXT NOT NULL,
+  test_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  commit_sha TEXT,
+  recorded_at TEXT NOT NULL,
+  PRIMARY KEY (run_id, surface, test_id)
+);
+CREATE TABLE IF NOT EXISTS reruns (
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  surface TEXT NOT NULL,
+  test_id TEXT NOT NULL,
+  original TEXT NOT NULL,
+  rerun TEXT NOT NULL,
+  PRIMARY KEY (run_id, surface, test_id)
+);
 CREATE TABLE IF NOT EXISTS controls (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
@@ -51,6 +69,9 @@ export function openStore(dbPath) {
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   db.exec(SCHEMA);
+  // Schema changes are additive only, so older databases keep working.
+  const runColumns = db.prepare('PRAGMA table_info(runs)').all().map((c) => c.name);
+  if (!runColumns.includes('commit_sha')) db.exec('ALTER TABLE runs ADD COLUMN commit_sha TEXT');
 
   return {
     close: () => db.close(),
@@ -117,6 +138,37 @@ export function openStore(dbPath) {
     },
 
     getDecision: (runId, stepId) => db.prepare('SELECT * FROM decisions WHERE run_id = ? AND step_id = ?').get(runId, stepId) ?? null,
+
+    setRunCommit(id, sha) {
+      db.prepare('UPDATE runs SET commit_sha = ? WHERE id = ?').run(sha, id);
+    },
+
+    recordResults(runId, { project, surface, commitSha, results, reruns }) {
+      const ts = now();
+      const insert = db.prepare('INSERT OR REPLACE INTO results (run_id, project, surface, test_id, status, commit_sha, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      const insertRerun = db.prepare('INSERT OR REPLACE INTO reruns (run_id, surface, test_id, original, rerun) VALUES (?, ?, ?, ?, ?)');
+      db.exec('BEGIN');
+      try {
+        for (const r of results) insert.run(runId, project ?? null, surface, r.test_id, r.status, commitSha ?? null, ts);
+        for (const c of reruns) insertRerun.run(runId, surface, c.test_id, c.original ?? 'UNKNOWN', c.rerun);
+        db.exec('COMMIT');
+      } catch (e) {
+        db.exec('ROLLBACK');
+        throw e;
+      }
+    },
+
+    // Read-only named queries for history, flakiness and trends.
+    query(name, params = {}) {
+      const QUERIES = {
+        history: 'SELECT r.run_id, r.surface, r.test_id, r.status, r.commit_sha, runs.workflow FROM results r JOIN runs ON runs.id = r.run_id WHERE (:project IS NULL OR r.project = :project) ORDER BY r.run_id',
+        reruns: 'SELECT x.run_id, x.surface, x.test_id, x.original, x.rerun FROM reruns x JOIN runs ON runs.id = x.run_id ORDER BY x.run_id',
+        runs: 'SELECT id, workflow, status, cost_usd, commit_sha, created_at, updated_at FROM runs ORDER BY id',
+      };
+      if (!QUERIES[name]) throw new Error(`Unknown query "${name}"`);
+      const sql = QUERIES[name];
+      return sql.includes(':project') ? db.prepare(sql).all({ project: params.project ?? null }) : db.prepare(sql).all();
+    },
 
     getControl: (key) => db.prepare('SELECT value FROM controls WHERE key = ?').get(key)?.value ?? null,
 
