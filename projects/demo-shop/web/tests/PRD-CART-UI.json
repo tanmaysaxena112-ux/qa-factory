@@ -1,0 +1,1849 @@
+{
+  "schema": "qa.webtests.v1",
+  "project": "demo-shop",
+  "tests": [
+    {
+      "test_id": "WEB-CART-01",
+      "oracle": "AC-001.1",
+      "title": "Site root shows page titled and headed \"Demo Shop\"",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "heading",
+            "name": "Demo Shop"
+          },
+          "value": "Demo Shop"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-02",
+      "oracle": "AC-001.2",
+      "title": "Site root shows \"Products\" and \"Cart\" headings",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "heading",
+            "name": "Products"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "heading",
+            "name": "Cart"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-03",
+      "oracle": "AC-002.1",
+      "title": "Every catalogue product is listed with its name",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Pen"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Backpack"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Umbrella"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-04",
+      "oracle": "AC-002.2",
+      "title": "Every product shows its price as a dollar amount with two decimals",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "$4.99"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "$1.25"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "$39.99"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "$15.50"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-05",
+      "oracle": "AC-002.3",
+      "title": "Every product shows its catalogue stock as \"<n> in stock\"",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "25 in stock"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "100 in stock"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "3 in stock"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "0 in stock"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-06",
+      "oracle": "EC-002.1",
+      "title": "Displayed stock stays at the catalogue figure after adding to cart",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "25 in stock"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "25 in stock"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-08",
+      "oracle": "AC-003.1",
+      "title": "Quantity field is labelled per product and starts at 1",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "label": "Quantity for Notebook"
+          }
+        },
+        {
+          "action": "expect_value",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-09",
+      "oracle": "AC-003.2",
+      "title": "Enabled add button is shown for a product with stock above zero",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_enabled",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-10",
+      "oracle": "AC-003.3",
+      "title": "Zero-stock product shows a disabled \"Out of stock\" button instead of the add button",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "role": "button",
+            "name": "Add Umbrella to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "button",
+            "name": "Out of stock"
+          }
+        },
+        {
+          "action": "expect_disabled",
+          "target": {
+            "role": "button",
+            "name": "Out of stock"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-11",
+      "oracle": "AC-003.4",
+      "title": "Entering a valid quantity and pressing add adds that quantity to the cart",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "3"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 3"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-12",
+      "oracle": "AC-006.1",
+      "title": "Quantity of 0 is rejected with the whole-number message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-13",
+      "oracle": "AC-006.1",
+      "title": "Quantity of 11 is rejected with the whole-number message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "11"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-14",
+      "oracle": "AC-006.1",
+      "title": "A non-whole quantity is rejected with the whole-number message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "2.5"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-15",
+      "oracle": "EC-003.2",
+      "title": "Quantity field keeps its value after a rejected add and allows an immediate retry",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "expect_value",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-16",
+      "oracle": "EC-003.3",
+      "title": "Out-of-stock product's quantity field stays present with only the button disabled",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "label": "Quantity for Umbrella"
+          }
+        },
+        {
+          "action": "expect_enabled",
+          "target": {
+            "label": "Quantity for Umbrella"
+          }
+        },
+        {
+          "action": "expect_disabled",
+          "target": {
+            "role": "button",
+            "name": "Out of stock"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-17",
+      "oracle": "AC-003.4",
+      "title": "Minimum valid quantity of 1 is accepted",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_value",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-18",
+      "oracle": "AC-003.4",
+      "title": "Maximum valid quantity of 10 is accepted",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "10"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 10"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-19",
+      "oracle": "AC-006.1",
+      "title": "Adding a quantity that would take an existing line above 10 is rejected",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "6"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 6"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "5"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 6"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-20",
+      "oracle": "AC-004.1",
+      "title": "Cart line shows the product name, quantity and line total",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "2"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 2"
+          }
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Cart"
+          },
+          "value": "$9.98"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-21",
+      "oracle": "AC-004.2",
+      "title": "Cart line has a working \"Remove <product name>\" button",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-22",
+      "oracle": "AC-004.3",
+      "title": "Empty cart shows \"Your cart is empty.\"",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Your cart is empty."
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-23",
+      "oracle": "EC-004.2",
+      "title": "Refreshing the page shows the current server-held cart and clears unsent input",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "5"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Pen to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_value",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "1"
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Quantity must be a whole number from 1 to 10."
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-24",
+      "oracle": "AC-005.1",
+      "title": "Cart total equals the sum of line totals",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "2"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 2"
+          }
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Cart"
+          },
+          "value": "$9.98"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $9.98"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-25",
+      "oracle": "AC-005.2",
+      "title": "Total updates within 2 seconds after a successful add, without reload",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $0.00"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $4.99"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-26",
+      "oracle": "AC-005.3",
+      "title": "Total updates within 2 seconds after a successful remove, without reload",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $4.99"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $0.00"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-27",
+      "oracle": "AC-005.4",
+      "title": "Empty cart shows \"Total: $0.00\"",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $0.00"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-28",
+      "oracle": "AC-005.1",
+      "title": "Total sums correctly across multiple cart lines with different prices",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "3"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 3"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "2"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Pen to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Pen × 2"
+          }
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Cart"
+          },
+          "value": "$14.97"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Cart"
+          },
+          "value": "$2.50"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $17.47"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-29",
+      "oracle": "AC-006.2",
+      "title": "Adding more than available stock shows the stock message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "3 in stock"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "4"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Not enough stock for that quantity."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-30",
+      "oracle": "AC-006.3",
+      "title": "Failure messages appear in an alert-role element for screen reader announcement",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "alert"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-31",
+      "oracle": "EC-006.1",
+      "title": "A shown message clears when the next add or remove succeeds",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Quantity must be a whole number from 1 to 10."
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-32",
+      "oracle": "EC-006.2",
+      "title": "A new failure message replaces the previously shown message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "4"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Not enough stock for that quantity."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-35",
+      "oracle": "AC-007.1",
+      "title": "Add and remove works to completion in Chromium",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-36",
+      "oracle": "AC-007.1",
+      "title": "Add and remove works to completion in Firefox",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-37",
+      "oracle": "AC-007.1",
+      "title": "Add and remove works to completion in WebKit",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-38",
+      "oracle": "AC-007.2",
+      "title": "Products and Cart sections stack in one column at 700 pixels wide",
+      "steps": [
+        {
+          "action": "set_viewport",
+          "width": 700,
+          "height": 900
+        },
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_stacked",
+          "target": {
+            "role": "heading",
+            "name": "Products"
+          },
+          "second": {
+            "role": "heading",
+            "name": "Cart"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-39",
+      "oracle": "AC-007.2",
+      "title": "Products and Cart sections sit side by side above 700 pixels wide",
+      "steps": [
+        {
+          "action": "set_viewport",
+          "width": 701,
+          "height": 900
+        },
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_side_by_side",
+          "target": {
+            "role": "heading",
+            "name": "Products"
+          },
+          "second": {
+            "role": "heading",
+            "name": "Cart"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-40",
+      "oracle": "AC-008.1",
+      "title": "axe-core reports no WCAG A/AA violations on the empty-cart page",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "check_a11y"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-41",
+      "oracle": "AC-008.1",
+      "title": "axe-core reports no WCAG A/AA violations on a page with a cart line and a shown message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Pen to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "check_a11y"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-42",
+      "oracle": "AC-008.2",
+      "title": "Quantity field, add button and remove button have the accessible names defined in the PRD",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "label": "Quantity for Notebook"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-43",
+      "oracle": "AC-008.3",
+      "title": "Every control is reachable by Tab and activatable from the keyboard",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "label": "Quantity for Notebook"
+          }
+        },
+        {
+          "action": "expect_focused",
+          "target": {
+            "label": "Quantity for Notebook"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "1"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "expect_focused",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "press",
+          "key": "Enter"
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_focused",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "press",
+          "key": "Enter"
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-44",
+      "oracle": "AC-009.1",
+      "title": "Rendered page matches the approved baseline across engines and the phone viewport",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "screenshot",
+          "name": "cart-page-desktop"
+        },
+        {
+          "action": "set_viewport",
+          "width": 412,
+          "height": 915
+        },
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "screenshot",
+          "name": "cart-page-phone"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-47",
+      "oracle": "AC-002.3",
+      "title": "Zero-stock product shows \"0 in stock\" as its stock text",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "0 in stock"
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-48",
+      "oracle": "AC-006.1",
+      "title": "An empty quantity field is rejected with the whole-number message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": ""
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-50",
+      "oracle": "AC-003.4",
+      "title": "Adding to an existing line to reach exactly 10 succeeds",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "6"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 6"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Notebook"
+          },
+          "value": "4"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": ""
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 10"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-51",
+      "oracle": "AC-003.4",
+      "title": "Adding a quantity exactly equal to the available stock succeeds",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "expect_contains",
+          "target": {
+            "role": "region",
+            "name": "Products"
+          },
+          "value": "3 in stock"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "3"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": ""
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Backpack × 3"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-52",
+      "oracle": "EC-006.1",
+      "title": "A shown failure message clears when a subsequent remove succeeds",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Pen"
+          },
+          "value": "0"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Pen to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Quantity must be a whole number from 1 to 10."
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-54",
+      "oracle": "AC-004.3",
+      "title": "Removing the last cart line shows \"Your cart is empty.\" again",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Notebook to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Remove Notebook"
+          }
+        },
+        {
+          "action": "expect_hidden",
+          "target": {
+            "text": "Notebook × 1"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Your cart is empty."
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Total: $0.00"
+          }
+        }
+      ]
+    }
+  ]
+}

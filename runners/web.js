@@ -32,6 +32,7 @@ const NEEDS = {
   screenshot: ['name'],
   press: ['key'],
   expect_focused: ['target'],
+  expect_value: ['target', 'value'],
   set_viewport: ['width', 'height'],
   expect_stacked: ['target', 'second'],
   expect_side_by_side: ['target', 'second'],
@@ -80,6 +81,7 @@ function stepCode(s) {
     case 'screenshot': return `await expect(page).toHaveScreenshot(${J(`${s.name}.png`)}, { fullPage: true, animations: 'disabled' });`;
     case 'press': return `await page.keyboard.press(${J(s.key === 'Space' ? ' ' : s.key)});`;
     case 'expect_focused': return `await expect(${loc}).toBeFocused();`;
+    case 'expect_value': return `await expect(${loc}).toHaveValue(${J(s.value)});`;
     case 'set_viewport': return `await page.setViewportSize({ width: ${J(s.width)}, height: ${J(s.height)} });`;
     case 'expect_stacked':
       // The second element sits below the first, not beside it.

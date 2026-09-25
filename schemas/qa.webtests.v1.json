@@ -33,7 +33,7 @@
           "type": "string",
           "enum": [
             "goto", "click", "fill", "press", "set_viewport", "request",
-            "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_enabled", "expect_disabled", "expect_count", "expect_focused",
+            "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_enabled", "expect_disabled", "expect_count", "expect_focused", "expect_value",
             "expect_stacked", "expect_side_by_side", "check_a11y", "screenshot"
           ]
         },

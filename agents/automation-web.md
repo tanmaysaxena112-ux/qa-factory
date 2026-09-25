@@ -19,6 +19,9 @@ Actions:
 - `click` and `fill` (with `value`) on a `target`.
 - `expect_text` (whole text equals `value`), `expect_contains` (text contains `value`), `expect_visible`, `expect_hidden`, `expect_enabled`, `expect_disabled`, `expect_count` (with `count`) on a `target`.
 - `expect_focused` on a `target`: that element has keyboard focus.
+- `expect_value` on a field `target` with `value`: the field's current value. Use this, never `expect_text`, for input fields.
+- To check text inside a section, use `expect_contains` on the section, for example `{ "role": "region", "name": "Products" }`; a line of text may combine several values, so exact `text` targets fit only standalone texts.
+- An empty message area is checked with `expect_text` and `value` "" (the area always exists).
 - `press` with `key` (`Tab`, `Shift+Tab`, `Enter`, `Space`, `Escape`): a keyboard press.
 - `set_viewport` with `width` and `height` in pixels. Put it before `goto` to load the page at that size.
 - `expect_stacked` with `target` and `second`: the second element sits below the first. `expect_side_by_side`: the second sits to the right of the first.
