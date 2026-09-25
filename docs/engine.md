@@ -109,3 +109,29 @@ Each run gets `evidence/<run-id>/`. Files are redacted before writing, written o
 ## Approver identity
 
 `qa approve` records `QA_APPROVER` if set, otherwise `<user>@<host>`. Decisions are refused inside any process started for an agent.
+
+## Web tests
+
+`projects/<p>/web/tests/*.json`, validated against `qa.webtests.v1`. Each test implements one approved WEB case and is compiled into a Playwright spec; every value enters the generated code as a JSON literal.
+
+| Action | Fields | Meaning |
+|---|---|---|
+| `goto` | `path` | Load a page |
+| `click`, `fill` | `target`, `value` | Act on an element |
+| `press` | `key` | Keyboard: Tab, Shift+Tab, Enter, Space, Escape |
+| `set_viewport` | `width`, `height` | Resize before loading, for responsive checks |
+| `request` | `method`, `path`, `body` | Change server state mid-test, as another tab would |
+| `expect_text`, `expect_contains` | `target`, `value` | Exact or partial text |
+| `expect_visible`, `expect_hidden`, `expect_enabled`, `expect_disabled`, `expect_focused` | `target` | Element state |
+| `expect_count` | `target`, `count` | Number of matches |
+| `expect_stacked`, `expect_side_by_side` | `target`, `second` | Layout relation of two elements |
+| `check_a11y` | none | axe-core WCAG 2.0, 2.1 and 2.2 A and AA scan; any violation fails |
+| `screenshot` | `name` | Compare with the approved baseline; above 1 percent difference fails, a missing baseline blocks |
+
+Targets use what a shopper perceives: `role` with `name`, `label`, or visible `text`. CSS selectors and test IDs are not allowed.
+
+Every test runs in Chromium, Firefox and WebKit at desktop size and in Chromium at the Pixel 7 phone viewport. A test passes only when it passes in all four.
+
+### Visual baselines
+
+`qa web baseline` creates only missing baselines, from the healthy build, into `projects/<p>/web/baselines/`, named per test, engine and platform. The QA Lead reviews the images at a gate before they become the reference. Regression runs never update baselines.

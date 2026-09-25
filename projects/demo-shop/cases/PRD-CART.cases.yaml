@@ -375,15 +375,10 @@ cases:
     surface: api
     technique: boundary
     preconditions:
-      - Cart is empty (call POST /__reset before the test).
-      - Call GET /products and select a product P with stock between 1 and 9
-        inclusive (so stock + 1 does not also trip the 10-per-line limit);
-        record P.id and P.stock.
+      - Cart holds 1 of P-3 (stock 3)
     steps:
-      - 'Send POST /cart/items with body {"product_id": P.id, "quantity":
-        P.stock + 1}.'
-      - Verify the status code is 409 and the response has error
-        "insufficient_stock".
+      - POST /cart/items with product_id P-3 and quantity 1
+      - POST /cart/items with product_id P-3 and quantity 3
     source: test_designer
   - id: API-CART-20
     title: When both the 10-per-line and stock limits are broken, the quantity rule
@@ -721,3 +716,48 @@ cases:
       - Verify the status code is 404 and the response has error "not_in_cart"
         (the line no longer exists after the first successful removal).
     source: edge_case_hunter
+  - id: API-CART-35
+    title: A product_id with surrounding spaces is not trimmed
+    requirement: REQ-002
+    criteria:
+      - EC-002.5
+    oracle:
+      criterion: EC-002.5
+      expected: 404 with error product_not_found
+    surface: api
+    technique: data_extreme
+    preconditions:
+      - Cart is empty
+    steps:
+      - POST /cart/items with product_id " P-1 " and quantity 1
+    source: qa_lead
+  - id: API-CART-36
+    title: A JSON body that is an array is rejected
+    requirement: REQ-002
+    criteria:
+      - EC-002.6
+    oracle:
+      criterion: EC-002.6
+      expected: 400 with error invalid_body
+    surface: api
+    technique: equivalence
+    preconditions:
+      - Cart is empty
+    steps:
+      - POST /cart/items with the raw body [1,2]
+    source: qa_lead
+  - id: API-CART-37
+    title: Removing an unusual, long product_id that is not in the cart
+    requirement: REQ-004
+    criteria:
+      - EC-004.2
+    oracle:
+      criterion: EC-004.2
+      expected: 404 with error not_in_cart
+    surface: api
+    technique: data_extreme
+    preconditions:
+      - Cart is empty
+    steps:
+      - DELETE /cart/items/NO-SUCH-PRODUCT-0123456789-abcdefghij
+    source: qa_lead

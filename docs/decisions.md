@@ -41,3 +41,11 @@ Each decision states the context, the choice and what it costs. Newest last.
 **Decision.** Node 24 LTS is the floor (`engines >=24`, `qa doctor` fails other lines); move to Node 26 after it becomes LTS on 2026-10-28 and rerun the suite, since `node:sqlite` may still change. Agent roles name exact model IDs (`claude-sonnet-5`, `claude-haiku-4-5-20251001`, `claude-opus-5-5`) so a run is reproducible. The mobile lane targets WebdriverIO 9 and Appium 3. Reporting targets Allure 3 (pure Node). Load testing, when adopted, targets k6 v2.
 
 **Cost.** Model upgrades become deliberate pull requests rather than silent changes.
+
+## D-006: Declarative web tests compiled to Playwright
+
+**Context.** Agent-written Playwright code would be arbitrary code in the repository, hard to review and able to do anything the test process can do.
+
+**Decision.** Web tests are data (`qa.webtests.v1`) with a fixed action list. The runner compiles them into Playwright specs, inserting every value through JSON encoding, and runs them with the Playwright test runner across four engine and viewport projects. Accessibility uses axe-core; visual checks use Playwright screenshots against QA Lead approved baselines. When the format cannot express a case, the case stays manual and is reported, rather than approximated.
+
+**Cost.** New interaction kinds need a platform change. The first web automation run showed eight cases that needed keyboard, viewport, layout and mid-test request actions, which were added.

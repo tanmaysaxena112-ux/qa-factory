@@ -782,13 +782,33 @@
       "title": "Adding one more than the remaining stock is rejected",
       "steps": [
         {
-          "name": "Add P-3 quantity one more than stock",
+          "name": "add 1 of P-3",
           "request": {
             "method": "POST",
             "path": "/cart/items",
             "body": {
               "product_id": "P-3",
-              "quantity": 4
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 201,
+            "json": [
+              {
+                "path": "$.quantity",
+                "equals": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "add 3 more of P-3, one more than the remaining 2",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": "P-3",
+              "quantity": 3
             }
           },
           "expect": {
@@ -797,6 +817,22 @@
               {
                 "path": "$.error",
                 "equals": "insufficient_stock"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cart unchanged",
+          "request": {
+            "method": "GET",
+            "path": "/cart"
+          },
+          "expect": {
+            "status": 200,
+            "json": [
+              {
+                "path": "$.items[0].quantity",
+                "equals": 1
               }
             ]
           }
@@ -1553,6 +1589,80 @@
           "request": {
             "method": "DELETE",
             "path": "/cart/items/P-1"
+          },
+          "expect": {
+            "status": 404,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "not_in_cart"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-35",
+      "oracle": "EC-002.5",
+      "title": "A product_id with surrounding spaces is not trimmed",
+      "steps": [
+        {
+          "name": "add padded id",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "body": {
+              "product_id": " P-1 ",
+              "quantity": 1
+            }
+          },
+          "expect": {
+            "status": 404,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "product_not_found"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-36",
+      "oracle": "EC-002.6",
+      "title": "A JSON body that is an array is rejected",
+      "steps": [
+        {
+          "name": "add array body",
+          "request": {
+            "method": "POST",
+            "path": "/cart/items",
+            "raw_body": "[1,2]"
+          },
+          "expect": {
+            "status": 400,
+            "json": [
+              {
+                "path": "$.error",
+                "equals": "invalid_body"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "API-CART-37",
+      "oracle": "EC-004.2",
+      "title": "Removing an unusual, long product_id that is not in the cart",
+      "steps": [
+        {
+          "name": "remove unknown long id",
+          "request": {
+            "method": "DELETE",
+            "path": "/cart/items/NO-SUCH-PRODUCT-0123456789-abcdefghij"
           },
           "expect": {
             "status": 404,
