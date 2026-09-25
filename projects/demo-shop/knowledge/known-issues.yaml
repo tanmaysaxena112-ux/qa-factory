@@ -1,0 +1,21 @@
+# Known issues register. Triage checks new failures against it so a known
+# defect is linked, not filed again. Closed entries stay for history.
+issues:
+  - id: KI-001
+    status: closed
+    summary: POST /cart/items accepted a missing or empty product_id with 404 instead of 400
+    tests: [API-CART-10, API-CART-11, API-CART-12, API-CART-13]
+    found_in: RUN-2026-0925-006
+    fixed_in: RUN-2026-0925-007
+  - id: KI-002
+    status: closed
+    summary: Touch targets below 48x48 CSS px on phones
+    tests: [MOB-CART-07, MOB-CART-08, MOB-CART-09, MOB-CART-10]
+    found_in: RUN-2026-0925-024
+    fixed_in: RUN-2026-0925-025
+  - id: KI-003
+    status: closed
+    summary: No security headers; product names rendered as markup (escape ESC-001)
+    tests: [WEB-CART-07]
+    found_in: ESC-001
+    fixed_in: RUN-2026-0926-001

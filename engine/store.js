@@ -52,6 +52,17 @@ CREATE TABLE IF NOT EXISTS reruns (
   rerun TEXT NOT NULL,
   PRIMARY KEY (run_id, surface, test_id)
 );
+CREATE TABLE IF NOT EXISTS audits (
+  run_id TEXT NOT NULL,
+  surface TEXT NOT NULL,
+  test_id TEXT NOT NULL,
+  agree INTEGER CHECK (agree IN (0, 1)),
+  auditor TEXT,
+  note TEXT,
+  sampled_at TEXT NOT NULL,
+  decided_at TEXT,
+  PRIMARY KEY (run_id, surface, test_id)
+);
 CREATE TABLE IF NOT EXISTS controls (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
@@ -169,6 +180,18 @@ export function openStore(dbPath) {
       const sql = QUERIES[name];
       return sql.includes(':project') ? db.prepare(sql).all({ project: params.project ?? null }) : db.prepare(sql).all();
     },
+
+    // The QA Lead's audit of a random sample of passes measures verdict accuracy.
+    sampleAudit(rows) {
+      const insert = db.prepare('INSERT OR IGNORE INTO audits (run_id, surface, test_id, sampled_at) VALUES (?, ?, ?, ?)');
+      for (const r of rows) insert.run(r.run_id, r.surface, r.test_id, now());
+    },
+    pendingAudits: () => db.prepare('SELECT * FROM audits WHERE agree IS NULL ORDER BY run_id, test_id').all(),
+    recordAudit({ runId, surface, testId, agree, auditor, note }) {
+      const res = db.prepare('UPDATE audits SET agree = ?, auditor = ?, note = ?, decided_at = ? WHERE run_id = ? AND surface = ? AND test_id = ? AND agree IS NULL').run(agree ? 1 : 0, auditor, note ?? null, now(), runId, surface, testId);
+      if (res.changes !== 1) throw new Error(`No open audit item ${runId} ${surface} ${testId}`);
+    },
+    auditSummary: () => db.prepare('SELECT COUNT(*) AS decided, SUM(agree) AS agreed FROM audits WHERE agree IS NOT NULL').get(),
 
     getControl: (key) => db.prepare('SELECT value FROM controls WHERE key = ?').get(key)?.value ?? null,
 

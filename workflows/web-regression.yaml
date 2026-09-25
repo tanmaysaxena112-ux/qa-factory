@@ -37,7 +37,7 @@ steps:
 
   - id: stage-triage
     needs: [rerun]
-    run: qa stage --to triage run:web/main projects/${params.project}/prd/${params.prd_id}.md
+    run: qa stage --to triage run:web/main projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/knowledge/known-issues.yaml
 
   - id: triage
     needs: [stage-triage]

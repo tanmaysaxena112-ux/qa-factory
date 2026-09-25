@@ -44,6 +44,7 @@ const HELP = `qa: QA Factory command line
   qa coverage --project <p>           Criteria x cases x automated tests x latest status
   qa drift --project <p>              PRDs changed after their cases or tests
   qa scan performance|load|security --project <p>   Lighthouse, k6 and security checks against project budgets
+  qa audit sample|record|status       Weekly QA Lead audit of 5% of passes: verdict accuracy
   qa dashboard --project <p>          Quality targets, calibration, coverage and runs as one HTML page
   qa report verify --surface <s>      Fail the run if the report's counts differ from the results
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)
@@ -101,6 +102,9 @@ async function main(argv) {
       surface: { type: 'string' },
       browsers: { type: 'string' },
       update: { type: 'boolean', default: false },
+      run: { type: 'string' },
+      test: { type: 'string' },
+      agree: { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });

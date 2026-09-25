@@ -78,6 +78,10 @@ function insideRepo(repoRoot, rel) {
   return abs;
 }
 
+function approverIdentityForAudit() {
+  return process.env.QA_APPROVER || 'qa-lead';
+}
+
 function browserList(value) {
   if (!value) return Object.keys(BROWSERS);
   const list = value.split(',');
@@ -384,6 +388,45 @@ export async function runCommand(command, rest, values) {
     // A scan never fails the workflow step by itself; the QA Lead judges the
     // recorded result at the gate.
     return 0;
+  }
+
+  if (command === 'audit') {
+    // Weekly: a random 5 percent of recent passes is re-checked by the QA Lead
+    // against its evidence. Agreement is the verdict accuracy target.
+    const [sub] = rest;
+    const store = openStore(paths.db);
+    try {
+      if (sub === 'sample') {
+        const passes = store.query('history', { project: values.project }).filter((r) => r.status === 'PASS');
+        const latestRun = new Map();
+        for (const r of passes) latestRun.set(`${r.surface}:${r.test_id}`, r);
+        const pool = [...latestRun.values()];
+        const size = Math.max(1, Math.ceil(pool.length * 0.05));
+        const picked = [];
+        while (picked.length < size && pool.length) picked.push(...pool.splice(Math.floor(Math.random() * pool.length), 1));
+        store.sampleAudit(picked);
+        for (const p of picked) console.log(`${p.run_id}  ${p.surface.padEnd(6)} ${p.test_id}  evidence: ${join(paths.evidence, p.run_id, p.surface, 'main', `${p.test_id}.json`)}`);
+        console.log(`\n${picked.length} passes sampled. After checking each against its evidence and oracle: qa audit record --run <run> --surface <s> --test <id> --agree yes|no`);
+        return 0;
+      }
+      if (sub === 'record') {
+        if (process.env.QA_AGENT_ROLE) throw new Error('Audits are recorded by a person, not by an agent');
+        const agree = need(values.agree, 'Pass --agree yes or --agree no');
+        store.recordAudit({ runId: need(values.run, 'Pass --run'), surface: need(values.surface, 'Pass --surface'), testId: need(values.test, 'Pass --test'), agree: agree === 'yes', auditor: approverIdentityForAudit(), note: values.reason });
+        console.log('recorded');
+        return 0;
+      }
+      if (sub === 'status') {
+        const s = store.auditSummary();
+        const pending = store.pendingAudits();
+        console.log(`decided ${s.decided}, agreed ${s.agreed ?? 0}, verdict accuracy ${s.decided ? ((s.agreed / s.decided) * 100).toFixed(1) + '%' : 'UNKNOWN'}; ${pending.length} waiting`);
+        for (const p of pending) console.log(`  waiting  ${p.run_id} ${p.surface} ${p.test_id}`);
+        return 0;
+      }
+      need(false, 'Usage: qa audit sample [--project <p>] | record --run R --surface S --test T --agree yes|no [--reason text] | status');
+    } finally {
+      store.close();
+    }
   }
 
   if (command === 'dashboard') {

@@ -56,6 +56,8 @@ export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot
   const calibrations = latestCalibrations(evidenceRoot);
   const agreement = reviewerAgreement(store);
   const escapes = escapeRate(store, project);
+  const audit = store.auditSummary();
+  audit.agreed = audit.agreed ?? 0;
   const runs = store.query('runs');
   const passing = coverage.filter((c) => c.latest === 'PASS').length;
   const faults = Object.values(calibrations).reduce((acc, c) => ({ caught: acc.caught + c.faults.filter((f) => f.detected).length, total: acc.total + c.faults.length }), { caught: 0, total: 0 });
@@ -64,7 +66,7 @@ export function buildDashboard({ store, repoRoot, project, schemas, evidenceRoot
   const targets = [
     { name: 'Requirement coverage', value: coverage.length ? passing / coverage.length : null, goal: '100%', detail: `${passing} of ${coverage.length} acceptance criteria pass their latest automated run` },
     { name: 'Fault detection rate', value: faults.total ? faults.caught / faults.total : null, goal: '99% or more', detail: `${faults.caught} of ${faults.total} seeded faults caught in the latest calibration of each surface` },
-    { name: 'Verdict accuracy', value: null, goal: '99% or more', detail: 'UNKNOWN: needs the QA Lead weekly 5% audit of passed tests, none recorded yet' },
+    { name: 'Verdict accuracy', value: audit.decided ? audit.agreed / audit.decided : null, goal: '99% or more', detail: audit.decided ? `${audit.agreed} of ${audit.decided} audited passes confirmed by the QA Lead` : 'UNKNOWN: run qa audit sample weekly and record each check' },
     { name: 'Defect escape rate', value: escapes.rate, goal: 'under 1%', detail: escapes.rate === null ? 'UNKNOWN: no defects recorded yet' : `${escapes.escapes} escaped after release, ${escapes.found} found by QA before release` },
   ];
   const health = [
