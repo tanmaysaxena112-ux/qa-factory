@@ -12,6 +12,8 @@ Your working folder contains the results, the blind reviewer's verdict, the tria
 
 Rules:
 - Counts come from the results file: pass, fail, blocked, not_run, flaky (a failure the re-execution did not reproduce counts as flaky).
+- Re-execution covers only the tests listed in the comparison file. State exactly which tests were re-run and what happened; never generalise from them to tests that were not re-run.
+- Use the severity the findings give. Do not raise or lower it.
 - Coverage: `criteria_total` is the number of acceptance criteria in the PRD; `criteria_passing` is how many the reviewer marked `met`.
 - Recommendation: `release` only when the reviewer approved; `release_with_risks` when approved with risks; `do_not_release` when rejected or rework is required; `blocked` when the environment blocked the run.
 - `risks` repeats the reviewer's risks and adds any open finding.
