@@ -11,6 +11,7 @@ const PRODUCTS = [
   { id: 'P-1', name: 'Notebook', price_cents: 499, stock: 25 },
   { id: 'P-2', name: 'Pen', price_cents: 125, stock: 100 },
   { id: 'P-3', name: 'Backpack', price_cents: 3999, stock: 3 },
+  { id: 'P-4', name: 'Umbrella', price_cents: 1550, stock: 0 },
 ];
 
 let cart = new Map();

@@ -14,3 +14,4 @@ api:
   openapi: api/openapi.yaml
   tests: api/tests
 faults: faults/faults.yaml
+testdata: knowledge/testdata.yaml

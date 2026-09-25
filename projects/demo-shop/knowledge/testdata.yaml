@@ -1,0 +1,12 @@
+# The state every API test starts from. The runner resets the app before each
+# test, so the cart is empty and the catalogue is exactly this.
+cart: empty
+catalogue:
+  - { id: P-1, name: Notebook, price: 4.99, stock: 25 }
+  - { id: P-2, name: Pen, price: 1.25, stock: 100 }
+  - { id: P-3, name: Backpack, price: 39.99, stock: 3 }
+  - { id: P-4, name: Umbrella, price: 15.50, stock: 0 }
+notes:
+  - P-3 has low stock, for stock-limit tests.
+  - P-4 is out of stock, for zero-stock tests.
+  - Use P-1 (stock 25) or P-2 (stock 100) for 10-per-line limit tests.

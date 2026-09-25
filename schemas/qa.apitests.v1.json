@@ -35,7 +35,8 @@
           "properties": {
             "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
             "path": { "type": "string", "pattern": "^/" },
-            "body": {}
+            "body": {},
+            "raw_body": { "type": "string" }
           }
         },
         "expect": {

@@ -13,7 +13,7 @@ steps:
 
   - id: stage
     needs: [check-cases]
-    run: qa stage --to automate projects/${params.project}/cases/${params.prd_id}.cases.yaml projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/api/openapi.yaml projects/${params.project}/project.yml
+    run: qa stage --to automate projects/${params.project}/cases/${params.prd_id}.cases.yaml projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/api/openapi.yaml projects/${params.project}/project.yml projects/${params.project}/knowledge/testdata.yaml
 
   - id: automate
     needs: [stage]

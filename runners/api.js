@@ -23,6 +23,10 @@ export function loadApiTests(project, schemas) {
       continue;
     }
     for (const t of doc.tests) {
+      // Tests are literal data. Any placeholder syntax means the author guessed
+      // at values instead of using the project's test data.
+      if (JSON.stringify(t).includes('{{')) problems.push(`${t.test_id}: contains "{{" placeholder syntax; tests must use literal values`);
+      if (t.steps.some((s) => s.request.body !== undefined && s.request.raw_body !== undefined)) problems.push(`${t.test_id}: a step sets both body and raw_body`);
       const c = cases.get(t.test_id);
       if (!c) problems.push(`${t.test_id}: no approved test case with this ID`);
       else if (c.surface !== 'api') problems.push(`${t.test_id}: case surface is ${c.surface}, not api`);
@@ -48,14 +52,15 @@ function readPath(body, path) {
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 async function runStep(baseUrl, step, contract) {
-  const { method, path, body } = step.request;
+  const { method, path, body, raw_body: rawBody } = step.request;
+  const payload = rawBody ?? (body === undefined ? undefined : JSON.stringify(body));
   const started = Date.now();
   let res;
   try {
     res = await fetch(`${baseUrl}${path}`, {
       method,
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: payload === undefined ? {} : { 'content-type': 'application/json' },
+      body: payload,
       signal: AbortSignal.timeout(10000),
     });
   } catch (e) {
