@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.scan.v1",
+  "title": "A non-functional scan (performance, load or security) measured against budgets the QA Lead sets",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "kind", "target", "status", "checks", "artefacts"],
+  "properties": {
+    "schema": { "const": "qa.scan.v1" },
+    "run_id": { "type": "string", "pattern": "^RUN-[0-9]{4}-[0-9]{4}-[0-9]{3}$" },
+    "kind": { "type": "string", "enum": ["performance", "load", "security"] },
+    "target": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+    "blocked_reason": { "type": "string" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "ok"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "value": {},
+          "budget": {},
+          "ok": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "artefacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+      }
+    }
+  }
+}

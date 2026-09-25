@@ -1,0 +1,23 @@
+schema: qa.workflow.v1
+name: scans
+description: >
+  Non-functional scans against the budgets in project.yml: Lighthouse
+  performance, k6 load and security checks. Deterministic; the QA Lead judges
+  the recorded results at the gate. A missing tool is reported as BLOCKED.
+params:
+  project: { required: true, description: Project folder name }
+  env: { default: dev, description: dev or uat }
+steps:
+  - id: performance
+    run: qa scan performance --project ${params.project} --env ${params.env}
+    timeout_seconds: 900
+  - id: load
+    run: qa scan load --project ${params.project} --env ${params.env}
+    timeout_seconds: 900
+  - id: security
+    run: qa scan security --project ${params.project} --env ${params.env}
+    timeout_seconds: 600
+  - id: qa-lead
+    needs: [performance, load, security]
+    gate: qa-lead
+    message: Review the scan results under scans/ in the evidence against the project budgets.

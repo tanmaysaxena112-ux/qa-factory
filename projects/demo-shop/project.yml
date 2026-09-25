@@ -19,3 +19,26 @@ api:
   tests: api/tests
 faults: faults/faults.yaml
 testdata: knowledge/testdata.yaml
+# Non-functional budgets set by the QA Lead. Scans pass only within them.
+scans:
+  performance:
+    pages: [/]
+    budgets:
+      performance: 0.9
+      accessibility: 1.0
+      best-practices: 0.9
+      largest-contentful-paint-ms: 2500
+      total-blocking-time-ms: 200
+      cumulative-layout-shift: 0.1
+  load:
+    vus: 20
+    duration: 20s
+    requests:
+      - { method: GET, path: /products }
+      - { method: GET, path: /cart }
+    thresholds:
+      p95-ms: 300
+      error-rate: 0.01
+  security:
+    paths: [/, /products]
+    required_headers: [x-content-type-options, content-security-policy, referrer-policy, x-frame-options]

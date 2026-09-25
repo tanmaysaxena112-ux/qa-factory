@@ -43,6 +43,7 @@ const HELP = `qa: QA Factory command line
   qa flakes [--project <p>]           Tests with mixed results on one commit or unreproduced re-runs
   qa coverage --project <p>           Criteria x cases x automated tests x latest status
   qa drift --project <p>              PRDs changed after their cases or tests
+  qa scan performance|load|security --project <p>   Lighthouse, k6 and security checks against project budgets
   qa dashboard --project <p>          Quality targets, calibration, coverage and runs as one HTML page
   qa report verify --surface <s>      Fail the run if the report's counts differ from the results
   qa stage --to <folder> <path>...    Stage files for a contained agent (inside a run)

@@ -15,6 +15,7 @@ import { calibrate } from '../runners/calibrate.js';
 import { flakiness, ingestRun } from '../engine/history.js';
 import { coverageMap, drift } from '../engine/insights.js';
 import { buildDashboard } from '../engine/dashboard.js';
+import { loadScan, performanceScan, securityScan } from '../runners/scans.js';
 import { loadProject } from '../runners/project.js';
 
 const FAILED = 1;
@@ -367,6 +368,22 @@ export async function runCommand(command, rest, values) {
       return 0;
     }
     need(false, 'Usage: qa mobile validate|run|rerun --project <name>');
+  }
+
+  if (command === 'scan') {
+    const [kind] = rest;
+    const run = { performance: performanceScan, load: loadScan, security: securityScan }[kind];
+    if (!run) need(false, 'Usage: qa scan performance|load|security --project <name> [--env dev] [--out dir]');
+    const project = loadProject(paths.repoRoot, need(values.project, `Usage: qa scan ${kind} --project <name>`));
+    const sink = evidenceSink(paths, values.out);
+    const result = await run({ repoRoot: paths.repoRoot, project, envName: values.env ?? 'dev', sink, runId: sink.runId });
+    const check = schemas.validate('qa.scan.v1', result);
+    if (!check.ok) throw new Error(`Scan result breaks qa.scan.v1: ${check.errors.join('; ')}`);
+    sink.write(`scans/${kind}/result.json`, result);
+    console.log(JSON.stringify({ kind, status: result.status, failed: result.checks.filter((c) => c.status === 'FAIL').map((c) => c.name), blocked: result.checks.filter((c) => c.status === 'BLOCKED').map((c) => c.name) }));
+    // A scan never fails the workflow step by itself; the QA Lead judges the
+    // recorded result at the gate.
+    return 0;
   }
 
   if (command === 'dashboard') {
