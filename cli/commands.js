@@ -14,6 +14,7 @@ import { loadMobileTests, runMobileTests } from '../runners/mobile.js';
 import { calibrate } from '../runners/calibrate.js';
 import { flakiness, ingestRun } from '../engine/history.js';
 import { coverageMap, drift } from '../engine/insights.js';
+import { buildDashboard } from '../engine/dashboard.js';
 import { loadProject } from '../runners/project.js';
 
 const FAILED = 1;
@@ -366,6 +367,21 @@ export async function runCommand(command, rest, values) {
       return 0;
     }
     need(false, 'Usage: qa mobile validate|run|rerun --project <name>');
+  }
+
+  if (command === 'dashboard') {
+    const project = loadProject(paths.repoRoot, need(values.project, 'Usage: qa dashboard --project <name> [--out file]'));
+    const store = openStore(paths.db);
+    try {
+      const html = buildDashboard({ store, repoRoot: paths.repoRoot, project, schemas, evidenceRoot: paths.evidence });
+      const out = resolve(values.out ?? join(paths.dataRoot, 'reports', `dashboard-${project.name}.html`));
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, html);
+      console.log(out);
+      return 0;
+    } finally {
+      store.close();
+    }
   }
 
   if (command === 'history' || command === 'flakes' || command === 'coverage' || command === 'drift') {
