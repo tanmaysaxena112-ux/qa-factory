@@ -1,0 +1,1100 @@
+cases:
+  - id: WEB-CART-01
+    title: Site root shows page titled and headed "Demo Shop"
+    requirement: REQ-001
+    criteria:
+      - AC-001.1
+    oracle:
+      criterion: AC-001.1
+      expected: The page has the title "Demo Shop" and shows a level 1 heading with
+        the text "Demo Shop".
+    surface: web
+    technique: happy_path
+    steps:
+      - Open the site root URL in a browser.
+      - Read the browser tab/page title.
+      - Locate the top-level (h1) heading element on the page.
+    source: test_designer
+  - id: WEB-CART-02
+    title: Site root shows "Products" and "Cart" headings
+    requirement: REQ-001
+    criteria:
+      - AC-001.2
+    oracle:
+      criterion: AC-001.2
+      expected: The page shows a heading with the text "Products" and a heading with
+        the text "Cart".
+    surface: web
+    technique: happy_path
+    steps:
+      - Open the site root URL.
+      - Locate a heading with the text "Products".
+      - Locate a heading with the text "Cart".
+    source: test_designer
+  - id: WEB-CART-03
+    title: Every catalogue product is listed with its name
+    requirement: REQ-002
+    criteria:
+      - AC-002.1
+    oracle:
+      criterion: AC-002.1
+      expected: Every product in the catalogue is listed with its name.
+    surface: web
+    technique: happy_path
+    preconditions:
+      - The catalogue contains one or more products.
+    steps:
+      - Open the site root URL.
+      - In the Products section, record every product name shown.
+      - Compare the recorded names against the full catalogue of products
+        configured for the environment.
+    source: test_designer
+  - id: WEB-CART-04
+    title: Every product shows its price as a dollar amount with two decimals
+    requirement: REQ-002
+    criteria:
+      - AC-002.2
+    oracle:
+      criterion: AC-002.2
+      expected: Every product shows its price as a dollar amount with two decimals,
+        for example "$4.99".
+    surface: web
+    technique: happy_path
+    steps:
+      - Open the site root URL.
+      - For each product in the Products section, read the displayed price text.
+      - Confirm each price matches the pattern "$<digits>.<two digits>" and
+        equals the product's configured price.
+    source: test_designer
+  - id: WEB-CART-05
+    title: Every product shows its catalogue stock as "<n> in stock"
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: Every product shows its catalogue stock as "<n> in stock", for example
+        "25 in stock".
+    surface: web
+    technique: happy_path
+    steps:
+      - Open the site root URL.
+      - For each product in the Products section, read the displayed stock text.
+      - Confirm each reads "<n> in stock" where <n> equals the product's
+        configured catalogue stock.
+    source: test_designer
+  - id: WEB-CART-06
+    title: Displayed stock stays at the catalogue figure after adding to cart
+    requirement: REQ-002
+    criteria:
+      - EC-002.1
+    oracle:
+      criterion: EC-002.1
+      expected: The stock shown is the catalogue figure and does not change as items
+        are added to the cart.
+    surface: web
+    technique: state_transition
+    preconditions:
+      - Product A has stock greater than 0; its displayed stock is noted as N.
+    steps:
+      - Open the site root URL and note the displayed stock for Product A (N).
+      - Add 1 of Product A to the cart using its Add button.
+      - Re-read the displayed stock figure for Product A in the Products section.
+      - Confirm it still reads N, unchanged.
+    source: test_designer
+  - id: WEB-CART-07
+    title: Product name containing markup is shown as literal plain text
+    requirement: REQ-002
+    criteria:
+      - EC-002.2
+    oracle:
+      criterion: EC-002.2
+      expected: Product names are shown as plain text; markup inside a name is
+        displayed literally and never interpreted.
+    surface: web
+    technique: data_extreme
+    preconditions:
+      - The catalogue includes Product M whose configured name contains markup
+        characters, for example "Widget <b>Pro</b>".
+    steps:
+      - Open the site root URL.
+      - Locate Product M in the Products section.
+      - Read the exact text shown for Product M's name, including the markup
+        characters.
+      - Inspect the rendered DOM to confirm the markup characters are plain text
+        content and not an interpreted HTML element (for example, no bold
+        styling is produced by the name).
+    source: test_designer
+  - id: WEB-CART-08
+    title: Quantity field is labelled per product and starts at 1
+    requirement: REQ-003
+    criteria:
+      - AC-003.1
+    oracle:
+      criterion: AC-003.1
+      expected: Every product has a quantity field labelled "Quantity for <product
+        name>" whose value starts at 1.
+    surface: web
+    technique: happy_path
+    steps:
+      - Open the site root URL.
+      - For Product A, locate its quantity field.
+      - Confirm the field's accessible label reads "Quantity for Product A"
+        (using Product A's actual displayed name).
+      - Confirm the field's initial value is 1.
+    source: test_designer
+  - id: WEB-CART-09
+    title: Enabled add button is shown for a product with stock above zero
+    requirement: REQ-003
+    criteria:
+      - AC-003.2
+    oracle:
+      criterion: AC-003.2
+      expected: Every product with stock above zero has an enabled button "Add
+        <product name> to cart".
+    surface: web
+    technique: happy_path
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Locate the button next to Product A.
+      - Confirm its text reads "Add Product A to cart" (using Product A's actual
+        name).
+      - Confirm the button is enabled.
+    source: test_designer
+  - id: WEB-CART-10
+    title: Zero-stock product shows a disabled "Out of stock" button instead of the
+      add button
+    requirement: REQ-003
+    criteria:
+      - AC-003.3
+    oracle:
+      criterion: AC-003.3
+      expected: A product with zero stock shows a disabled button "Out of stock"
+        instead of the add button.
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product Z is a catalogue product with 0 stock.
+    steps:
+      - Open the site root URL.
+      - Locate Product Z in the Products section.
+      - Confirm no "Add Product Z to cart" button is present.
+      - Confirm a button labelled "Out of stock" is present for Product Z and is
+        disabled.
+    source: test_designer
+  - id: WEB-CART-11
+    title: Entering a valid quantity and pressing add adds that quantity to the cart
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+    oracle:
+      criterion: AC-003.4
+      expected: Entering a valid quantity and pressing the add button adds that
+        quantity of the product to the cart.
+    surface: web
+    technique: happy_path
+    preconditions:
+      - Product A has stock of at least 3.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 3.
+      - Press "Add Product A to cart".
+      - Confirm the Cart section shows a line "Product A × 3".
+    source: test_designer
+  - id: WEB-CART-12
+    title: Quantity of 0 is rejected with the whole-number message
+    requirement: REQ-006
+    criteria:
+      - EC-003.1
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that is not a whole number from 1 to 10 shows
+        "Quantity must be a whole number from 1 to 10."
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 0.
+      - Press "Add Product A to cart".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-13
+    title: Quantity of 11 is rejected with the whole-number message
+    requirement: REQ-006
+    criteria:
+      - EC-003.1
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that is not a whole number from 1 to 10 shows
+        "Quantity must be a whole number from 1 to 10."
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock of at least 11.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 11.
+      - Press "Add Product A to cart".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-14
+    title: A non-whole quantity is rejected with the whole-number message
+    requirement: REQ-006
+    criteria:
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that is not a whole number from 1 to 10 shows
+        "Quantity must be a whole number from 1 to 10."
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 2.5.
+      - Press "Add Product A to cart".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-15
+    title: Quantity field keeps its value after a rejected add and allows an
+      immediate retry
+    requirement: REQ-003
+    criteria:
+      - EC-003.2
+    oracle:
+      criterion: EC-003.2
+      expected: After a rejected add, the quantity field keeps the entered value and
+        the shopper can try again straight away.
+    surface: web
+    technique: failure_path
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 0.
+      - Press "Add Product A to cart" and confirm the rejection message appears.
+      - Confirm the quantity field for Product A still shows 0.
+      - Change the quantity field for Product A to 1 and press "Add Product A to
+        cart" again.
+      - Confirm the add succeeds without needing to reload the page.
+    source: test_designer
+  - id: WEB-CART-16
+    title: Out-of-stock product's quantity field stays present with only the button
+      disabled
+    requirement: REQ-003
+    criteria:
+      - EC-003.3
+    oracle:
+      criterion: EC-003.3
+      expected: The quantity field of an out-of-stock product stays present; only its
+        button is disabled.
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product Z has 0 stock.
+    steps:
+      - Open the site root URL.
+      - Locate Product Z in the Products section.
+      - Confirm its quantity field is present and enabled.
+      - Confirm its "Out of stock" button is disabled.
+    source: test_designer
+  - id: WEB-CART-17
+    title: Minimum valid quantity of 1 is accepted
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+    oracle:
+      criterion: AC-003.4
+      expected: Entering a valid quantity and pressing the add button adds that
+        quantity of the product to the cart.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock greater than 0.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Confirm the quantity field for Product A starts at 1 and leave it at 1.
+      - Press "Add Product A to cart".
+      - Confirm the Cart section shows a line "Product A × 1".
+    source: test_designer
+  - id: WEB-CART-18
+    title: Maximum valid quantity of 10 is accepted
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+    oracle:
+      criterion: AC-003.4
+      expected: Entering a valid quantity and pressing the add button adds that
+        quantity of the product to the cart.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock of at least 10.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 10.
+      - Press "Add Product A to cart".
+      - Confirm the Cart section shows a line "Product A × 10".
+    source: test_designer
+  - id: WEB-CART-19
+    title: Adding a quantity that would take an existing line above 10 is rejected
+    requirement: REQ-006
+    criteria:
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that would take the line above 10 shows "Quantity
+        must be a whole number from 1 to 10."
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock of at least 11.
+      - The cart already contains a line "Product A × 6".
+    steps:
+      - Open the site root URL with the cart already containing "Product A × 6".
+      - Set the quantity field for Product A to 5.
+      - Press "Add Product A to cart".
+      - Read the message shown.
+      - Confirm the cart line for Product A still reads "Product A × 6",
+        unchanged.
+    source: test_designer
+  - id: WEB-CART-20
+    title: Cart line shows the product name, quantity and line total
+    requirement: REQ-004
+    criteria:
+      - AC-004.1
+    oracle:
+      criterion: AC-004.1
+      expected: Every cart line shows "<product name> × <quantity>" and its line total
+        as a dollar amount with two decimals.
+    surface: web
+    technique: happy_path
+    preconditions:
+      - Product A has stock of at least 2.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Add 2 of Product A to the cart.
+      - Read the cart line for Product A.
+      - Confirm it reads "Product A × 2" and shows a line total equal to 2 ×
+        Product A's unit price, formatted as a dollar amount with two decimals.
+    source: test_designer
+  - id: WEB-CART-21
+    title: Cart line has a working "Remove <product name>" button
+    requirement: REQ-004
+    criteria:
+      - AC-004.2
+    oracle:
+      criterion: AC-004.2
+      expected: Every cart line has a button "Remove <product name>" that removes the
+        line.
+    surface: web
+    technique: happy_path
+    preconditions:
+      - The cart contains a line "Product A × 1".
+    steps:
+      - Open the site root URL with the cart line "Product A × 1" present.
+      - Locate the button "Remove Product A" on that line.
+      - Press "Remove Product A".
+      - Confirm the cart line for Product A is no longer shown.
+    source: test_designer
+  - id: WEB-CART-22
+    title: Empty cart shows "Your cart is empty."
+    requirement: REQ-004
+    criteria:
+      - AC-004.3
+    oracle:
+      criterion: AC-004.3
+      expected: An empty cart shows "Your cart is empty."
+    surface: web
+    technique: happy_path
+    preconditions:
+      - The cart is empty.
+    steps:
+      - Open the site root URL with an empty cart.
+      - Read the Cart section.
+      - Confirm it shows the text "Your cart is empty."
+    source: test_designer
+  - id: WEB-CART-23
+    title: Refreshing the page shows the current server-held cart and clears unsent
+      input
+    requirement: REQ-004
+    criteria:
+      - EC-004.2
+    oracle:
+      criterion: EC-004.2
+      expected: A refresh or reopening the page shows the current cart and clears
+        unsent quantities and messages.
+    surface: web
+    technique: navigation
+    preconditions:
+      - The cart contains a line "Product A × 1".
+      - Product B has stock greater than 0.
+    steps:
+      - Open the site root URL; confirm the cart shows "Product A × 1".
+      - Type 5 into the quantity field for Product B without pressing add.
+      - Set Product B's quantity to 0 and press its add button to trigger and
+        confirm a failure message is shown.
+      - Refresh the page.
+      - Confirm the cart still shows "Product A × 1" (the current server-held
+        cart).
+      - Confirm Product B's quantity field has reset to its starting value of 1
+        and no failure message is shown.
+    source: test_designer
+  - id: WEB-CART-24
+    title: Cart total equals the sum of line totals
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: 'The cart shows "Total: $<amount>" with two decimals, and the amount
+        equals the sum of the line totals.'
+    surface: web
+    technique: money
+    preconditions:
+      - Product A has stock of at least 2.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Add 2 of Product A to the cart.
+      - Read the cart line's total.
+      - Read the displayed "Total:" amount.
+      - Confirm the total equals the sum of all line totals and is formatted
+        with two decimals.
+    source: test_designer
+  - id: WEB-CART-25
+    title: Total updates within 2 seconds after a successful add, without reload
+    requirement: REQ-005
+    criteria:
+      - AC-005.2
+    oracle:
+      criterion: AC-005.2
+      expected: After a successful add, the total shows the new amount without a page
+        reload, within 2 seconds.
+    surface: web
+    technique: time
+    preconditions:
+      - Product A has stock greater than 0.
+      - "The cart is empty (Total: $0.00)."
+    steps:
+      - 'Open the site root URL; confirm the total shows "Total: $0.00".'
+      - Set the quantity field for Product A to 1 and press "Add Product A to
+        cart".
+      - Starting from the button press, observe the Total figure.
+      - Confirm the Total updates to the new correct amount within 2 seconds and
+        that no page navigation or reload occurs.
+    source: test_designer
+  - id: WEB-CART-26
+    title: Total updates within 2 seconds after a successful remove, without reload
+    requirement: REQ-005
+    criteria:
+      - AC-005.3
+    oracle:
+      criterion: AC-005.3
+      expected: After a successful remove, the total shows the new amount without a
+        page reload, within 2 seconds.
+    surface: web
+    technique: time
+    preconditions:
+      - The cart contains a line "Product A × 1" and the Total reflects it.
+    steps:
+      - Open the site root URL with the cart containing "Product A × 1".
+      - Press "Remove Product A".
+      - Starting from the button press, observe the Total figure.
+      - 'Confirm the Total updates to the new correct amount (or "Total: $0.00"
+        if the cart becomes empty) within 2 seconds and that no page navigation
+        or reload occurs.'
+    source: test_designer
+  - id: WEB-CART-27
+    title: 'Empty cart shows "Total: $0.00"'
+    requirement: REQ-005
+    criteria:
+      - AC-005.4
+    oracle:
+      criterion: AC-005.4
+      expected: 'An empty cart shows "Total: $0.00".'
+    surface: web
+    technique: boundary
+    preconditions:
+      - The cart is empty.
+    steps:
+      - Open the site root URL with an empty cart.
+      - Read the Total figure.
+      - 'Confirm it reads "Total: $0.00".'
+    source: test_designer
+  - id: WEB-CART-28
+    title: Total sums correctly across multiple cart lines with different prices
+    requirement: REQ-005
+    criteria:
+      - AC-005.1
+    oracle:
+      criterion: AC-005.1
+      expected: 'The cart shows "Total: $<amount>" with two decimals, and the amount
+        equals the sum of the line totals.'
+    surface: web
+    technique: money
+    preconditions:
+      - Product A and Product B both have stock greater than 0 and different
+        unit prices.
+      - The cart is empty.
+    steps:
+      - Open the site root URL.
+      - Add 3 of Product A to the cart.
+      - Add 2 of Product B to the cart.
+      - Read each cart line's total.
+      - Read the displayed Total.
+      - Confirm the Total equals the exact sum of the two line totals, with no
+        rounding discrepancy, formatted with two decimals.
+    source: test_designer
+  - id: WEB-CART-29
+    title: Adding more than available stock shows the stock message
+    requirement: REQ-006
+    criteria:
+      - AC-006.2
+    oracle:
+      criterion: AC-006.2
+      expected: Adding more than the available stock shows "Not enough stock for that
+        quantity."
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product A has a displayed stock of N, where N is between 1 and 9.
+    steps:
+      - Open the site root URL and note Product A's displayed stock, N.
+      - Set the quantity field for Product A to N + 1 (a value between 2 and 10).
+      - Press "Add Product A to cart".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-30
+    title: Failure messages appear in an alert-role element for screen reader
+      announcement
+    requirement: REQ-006
+    criteria:
+      - AC-006.3
+    oracle:
+      criterion: AC-006.3
+      expected: Messages appear in an element with the alert role, so screen readers
+        announce them.
+    surface: web
+    technique: failure_path
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 0 and press "Add Product A to
+        cart" to trigger a failure message.
+      - Inspect the element containing the shown message.
+      - Confirm the element has role="alert" (or an equivalent implicit alert
+        role).
+    source: test_designer
+  - id: WEB-CART-31
+    title: A shown message clears when the next add or remove succeeds
+    requirement: REQ-006
+    criteria:
+      - EC-006.1
+    oracle:
+      criterion: EC-006.1
+      expected: A message clears when the next add or remove succeeds.
+    surface: web
+    technique: state_transition
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 0 and press "Add Product A to
+        cart" to show a failure message.
+      - Confirm the message is shown.
+      - Set the quantity field for Product A to 1 and press "Add Product A to
+        cart" again.
+      - Confirm the add succeeds and the previous failure message is no longer
+        shown.
+    source: test_designer
+  - id: WEB-CART-32
+    title: A new failure message replaces the previously shown message
+    requirement: REQ-006
+    criteria:
+      - EC-006.2
+    oracle:
+      criterion: EC-006.2
+      expected: A new failure replaces the message already shown.
+    surface: web
+    technique: state_transition
+    preconditions:
+      - Product A has stock greater than 0.
+      - Product B has a displayed stock of N, where N is between 1 and 9.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to 0 and press "Add Product A to
+        cart" so "Quantity must be a whole number from 1 to 10." is shown.
+      - Confirm that message is shown.
+      - Set the quantity field for Product B to N + 1 and press "Add Product B
+        to cart".
+      - Confirm the message area now shows only "Not enough stock for that
+        quantity." and the earlier message is gone.
+    source: test_designer
+  - id: WEB-CART-33
+    title: Adding a product that no longer exists shows the "no longer exists" message
+    requirement: REQ-006
+    criteria:
+      - EC-006.3
+    oracle:
+      criterion: EC-006.3
+      expected: If a product no longer exists when added, the page shows "That product
+        no longer exists."
+    surface: web
+    technique: failure_path
+    preconditions:
+      - The page has loaded showing Product A in the Products section.
+      - Product A is then removed from the server's catalogue, using the test
+        environment's data-setup capability, before the add is submitted.
+    steps:
+      - Open the site root URL; confirm Product A is listed.
+      - Without reloading the page, use the test environment's data-setup
+        capability to make Product A no longer exist in the server's catalogue.
+      - On the still-open page, set the quantity field for Product A to 1 and
+        press "Add Product A to cart".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-34
+    title: Removing a line that is no longer in the cart shows the "not in your
+      cart" message
+    requirement: REQ-006
+    criteria:
+      - EC-006.3
+    oracle:
+      criterion: EC-006.3
+      expected: If a line is no longer in the cart when removed, the page shows "That
+        item is not in your cart."
+    surface: web
+    technique: failure_path
+    preconditions:
+      - The page has loaded showing a cart line "Product A × 1".
+      - The line for Product A is then removed from the server-side cart, using
+        the test environment's data-setup capability, before the Remove button
+        is pressed.
+    steps:
+      - Open the site root URL; confirm the cart shows "Product A × 1".
+      - Without reloading the page, use the test environment's data-setup
+        capability to remove Product A's line from the server-side cart
+        directly.
+      - On the still-open page, press "Remove Product A".
+      - Read the message shown.
+    source: test_designer
+  - id: WEB-CART-35
+    title: Add and remove works to completion in Chromium
+    requirement: REQ-007
+    criteria:
+      - AC-007.1
+    oracle:
+      criterion: AC-007.1
+      expected: Adding a product and removing it works to completion in Chromium.
+    surface: web
+    technique: pairwise
+    preconditions:
+      - Test is run using the Chromium engine bundled with Playwright 1.63.
+      - Product A has stock greater than 0.
+    steps:
+      - Launch the site root URL in the Chromium engine.
+      - Set the quantity field for Product A to 1 and press "Add Product A to
+        cart".
+      - Confirm the cart line "Product A × 1" appears.
+      - Press "Remove Product A".
+      - Confirm the cart line is removed and the action completed without error.
+    source: test_designer
+  - id: WEB-CART-36
+    title: Add and remove works to completion in Firefox
+    requirement: REQ-007
+    criteria:
+      - AC-007.1
+    oracle:
+      criterion: AC-007.1
+      expected: Adding a product and removing it works to completion in Firefox.
+    surface: web
+    technique: pairwise
+    preconditions:
+      - Test is run using the Firefox engine bundled with Playwright 1.63.
+      - Product A has stock greater than 0.
+    steps:
+      - Launch the site root URL in the Firefox engine.
+      - Set the quantity field for Product A to 1 and press "Add Product A to
+        cart".
+      - Confirm the cart line "Product A × 1" appears.
+      - Press "Remove Product A".
+      - Confirm the cart line is removed and the action completed without error.
+    source: test_designer
+  - id: WEB-CART-37
+    title: Add and remove works to completion in WebKit
+    requirement: REQ-007
+    criteria:
+      - AC-007.1
+    oracle:
+      criterion: AC-007.1
+      expected: Adding a product and removing it works to completion in WebKit.
+    surface: web
+    technique: pairwise
+    preconditions:
+      - Test is run using the WebKit engine bundled with Playwright 1.63.
+      - Product A has stock greater than 0.
+    steps:
+      - Launch the site root URL in the WebKit engine.
+      - Set the quantity field for Product A to 1 and press "Add Product A to
+        cart".
+      - Confirm the cart line "Product A × 1" appears.
+      - Press "Remove Product A".
+      - Confirm the cart line is removed and the action completed without error.
+    source: test_designer
+  - id: WEB-CART-38
+    title: Products and Cart sections stack in one column at 700 pixels wide
+    requirement: REQ-007
+    criteria:
+      - AC-007.2
+    oracle:
+      criterion: AC-007.2
+      expected: At viewport widths of 700 pixels and below, the Products and Cart
+        sections stack in one column.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Browser viewport is set to exactly 700 pixels wide.
+    steps:
+      - Set the browser viewport width to 700 pixels.
+      - Open the site root URL.
+      - Inspect the layout of the Products and Cart sections.
+      - Confirm they are stacked in a single column, one above the other.
+    source: test_designer
+  - id: WEB-CART-39
+    title: Products and Cart sections sit side by side above 700 pixels wide
+    requirement: REQ-007
+    criteria:
+      - AC-007.2
+    oracle:
+      criterion: AC-007.2
+      expected: Above 700 pixels the Products and Cart sections sit side by side.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Browser viewport is set to 701 pixels wide.
+    steps:
+      - Set the browser viewport width to 701 pixels.
+      - Open the site root URL.
+      - Inspect the layout of the Products and Cart sections.
+      - Confirm they sit side by side, in separate columns on the same row.
+    source: test_designer
+  - id: WEB-CART-40
+    title: axe-core reports no WCAG A/AA violations on the empty-cart page
+    requirement: REQ-008
+    criteria:
+      - AC-008.1
+    oracle:
+      criterion: AC-008.1
+      expected: An axe-core scan against the WCAG 2.0, 2.1 and 2.2 A and AA rules
+        reports no violations, on the empty page.
+    surface: web
+    technique: equivalence
+    preconditions:
+      - The cart is empty.
+    steps:
+      - Open the site root URL with an empty cart.
+      - Run an axe-core scan against the WCAG 2.0, 2.1 and 2.2 A and AA rule
+        sets on the loaded page.
+      - Review the scan results.
+      - Confirm the scan reports zero violations.
+    source: test_designer
+  - id: WEB-CART-41
+    title: axe-core reports no WCAG A/AA violations on a page with a cart line and a
+      shown message
+    requirement: REQ-008
+    criteria:
+      - AC-008.1
+    oracle:
+      criterion: AC-008.1
+      expected: An axe-core scan against the WCAG 2.0, 2.1 and 2.2 A and AA rules
+        reports no violations, on a page with a cart line and a shown message.
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product A has stock greater than 0.
+      - Product B has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Add 1 of Product A to the cart so a cart line is present.
+      - Set Product B's quantity to 0 and press its add button so a failure
+        message is shown.
+      - Run an axe-core scan against the WCAG 2.0, 2.1 and 2.2 A and AA rule
+        sets on the current page state.
+      - Confirm the scan reports zero violations.
+    source: test_designer
+  - id: WEB-CART-42
+    title: Quantity field, add button and remove button have the accessible names
+      defined in the PRD
+    requirement: REQ-008
+    criteria:
+      - AC-008.2
+    oracle:
+      criterion: AC-008.2
+      expected: Every quantity field, add button and remove button has an accessible
+        name matching the texts in this PRD.
+    surface: web
+    technique: decision_table
+    preconditions:
+      - Product A has stock greater than 0 and a cart line "Product A × 1" is
+        present.
+    steps:
+      - Open the site root URL with a cart line "Product A × 1" present.
+      - Read the accessible name of Product A's quantity field; confirm it is
+        "Quantity for Product A".
+      - Read the accessible name of Product A's add button; confirm it is "Add
+        Product A to cart".
+      - Read the accessible name of the remove button on Product A's cart line;
+        confirm it is "Remove Product A".
+    source: test_designer
+  - id: WEB-CART-43
+    title: Every control is reachable by Tab and activatable from the keyboard
+    requirement: REQ-008
+    criteria:
+      - AC-008.3
+    oracle:
+      criterion: AC-008.3
+      expected: Every control can be reached with the Tab key and activated from the
+        keyboard.
+    surface: web
+    technique: navigation
+    preconditions:
+      - Product A has stock greater than 0.
+      - The cart contains a line for Product A.
+    steps:
+      - Open the site root URL.
+      - Using only the Tab key, move focus through the page and confirm every
+        quantity field, add button and remove button receives visible focus in
+        turn.
+      - With focus on Product A's quantity field, use the keyboard to change its
+        value.
+      - With focus on Product A's add button, press Enter or Space to activate
+        it and confirm the add action occurs.
+      - With focus on a cart line's remove button, press Enter or Space to
+        activate it and confirm the remove action occurs.
+    source: test_designer
+  - id: WEB-CART-44
+    title: Rendered page matches the approved baseline across engines and the phone
+      viewport
+    requirement: REQ-009
+    criteria:
+      - AC-009.1
+    oracle:
+      criterion: AC-009.1
+      expected: The rendered page matches the QA Lead's approved baseline in each
+        supported engine and the phone viewport.
+    surface: web
+    technique: pairwise
+    preconditions:
+      - Approved baselines exist for Chromium, Firefox and WebKit at desktop
+        width, and for the 412 pixel phone viewport.
+    steps:
+      - For each of Chromium, Firefox and WebKit at desktop width, and for the
+        412 pixel phone viewport, open the site root URL.
+      - Capture a screenshot of the rendered page.
+      - Compare the screenshot against the corresponding approved baseline.
+      - Confirm the pixel difference is at or below 1 percent for every
+        engine/viewport combination.
+    source: test_designer
+  - id: WEB-CART-45
+    title: Visual check fails when the difference exceeds 1 percent of pixels
+    requirement: REQ-009
+    criteria:
+      - AC-009.1
+    oracle:
+      criterion: AC-009.1
+      expected: A difference above 1 percent of pixels fails the check.
+    surface: web
+    technique: boundary
+    preconditions:
+      - An approved baseline exists.
+      - The current rendered page differs from the baseline by more than 1
+        percent of pixels.
+    steps:
+      - Render the page in a state that differs from its approved baseline by
+        more than 1 percent of pixels.
+      - Capture a screenshot and compare it against the approved baseline.
+      - Confirm the check reports a failure.
+    source: test_designer
+  - id: WEB-CART-46
+    title: Visual check blocks when the baseline is missing
+    requirement: REQ-009
+    criteria:
+      - AC-009.1
+    oracle:
+      criterion: AC-009.1
+      expected: A missing baseline blocks the check.
+    surface: web
+    technique: failure_path
+    preconditions:
+      - No approved baseline exists for the engine/viewport under test.
+    steps:
+      - Select an engine/viewport combination that has no approved baseline
+        stored.
+      - Render the page and attempt the visual comparison check.
+      - Confirm the check reports a blocked result rather than a pass or a
+        pixel-difference failure.
+    source: test_designer
+  - id: WEB-CART-47
+    title: Zero-stock product shows "0 in stock" as its stock text
+    requirement: REQ-002
+    criteria:
+      - AC-002.3
+    oracle:
+      criterion: AC-002.3
+      expected: Every product shows its catalogue stock as "<n> in stock"; for a
+        product with 0 stock this reads "0 in stock".
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product Z is a catalogue product with 0 stock.
+    steps:
+      - Open the site root URL.
+      - Locate Product Z in the Products section.
+      - Read its displayed stock text.
+      - Confirm it reads "0 in stock".
+    source: edge_case_hunter
+  - id: WEB-CART-48
+    title: An empty quantity field is rejected with the whole-number message
+    requirement: REQ-006
+    criteria:
+      - EC-003.1
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that is not a whole number from 1 to 10 shows
+        "Quantity must be a whole number from 1 to 10."
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Clear the quantity field for Product A so it is empty.
+      - Press "Add Product A to cart".
+      - Read the message shown.
+      - Confirm it reads "Quantity must be a whole number from 1 to 10."
+    source: edge_case_hunter
+  - id: WEB-CART-49
+    title: Non-numeric text in the quantity field is rejected with the whole-number
+      message
+    requirement: REQ-006
+    criteria:
+      - EC-003.1
+      - AC-006.1
+    oracle:
+      criterion: AC-006.1
+      expected: Adding a quantity that is not a whole number from 1 to 10 shows
+        "Quantity must be a whole number from 1 to 10."
+    surface: web
+    technique: equivalence
+    preconditions:
+      - Product A has stock greater than 0.
+    steps:
+      - Open the site root URL.
+      - Set the quantity field for Product A to the text "abc".
+      - Press "Add Product A to cart".
+      - Read the message shown.
+      - Confirm it reads "Quantity must be a whole number from 1 to 10."
+    source: edge_case_hunter
+  - id: WEB-CART-50
+    title: Adding to an existing line to reach exactly 10 succeeds
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+      - AC-006.1
+    oracle:
+      criterion: AC-003.4
+      expected: Entering a valid quantity and pressing the add button adds that
+        quantity of the product to the cart.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has stock of at least 10.
+      - The cart already contains a line "Product A × 6".
+    steps:
+      - Open the site root URL with the cart already containing "Product A × 6".
+      - Set the quantity field for Product A to 4.
+      - Press "Add Product A to cart".
+      - Confirm no failure message is shown.
+      - Confirm the cart line now reads "Product A × 10".
+    source: edge_case_hunter
+  - id: WEB-CART-51
+    title: Adding a quantity exactly equal to the available stock succeeds
+    requirement: REQ-003
+    criteria:
+      - AC-003.4
+      - AC-006.2
+    oracle:
+      criterion: AC-003.4
+      expected: Entering a valid quantity and pressing the add button adds that
+        quantity of the product to the cart.
+    surface: web
+    technique: boundary
+    preconditions:
+      - Product A has a displayed stock of N, where N is between 2 and 10.
+      - The cart is empty.
+    steps:
+      - Open the site root URL and note Product A's displayed stock, N.
+      - Set the quantity field for Product A to N.
+      - Press "Add Product A to cart".
+      - Confirm no failure message is shown.
+      - Confirm the cart shows a line "Product A × N".
+    source: edge_case_hunter
+  - id: WEB-CART-52
+    title: A shown failure message clears when a subsequent remove succeeds
+    requirement: REQ-006
+    criteria:
+      - EC-006.1
+    oracle:
+      criterion: EC-006.1
+      expected: A message clears when the next add or remove succeeds.
+    surface: web
+    technique: state_transition
+    preconditions:
+      - The cart contains a line "Product A × 1".
+      - Product B has stock greater than 0.
+    steps:
+      - Open the site root URL with the cart containing "Product A × 1".
+      - Set the quantity field for Product B to 0 and press "Add Product B to
+        cart" so a failure message is shown.
+      - Confirm the message is shown.
+      - Press "Remove Product A".
+      - Confirm the remove succeeds and the previously shown failure message is
+        no longer shown.
+    source: edge_case_hunter
+  - id: WEB-CART-54
+    title: Removing the last cart line shows "Your cart is empty." again
+    requirement: REQ-004
+    criteria:
+      - AC-004.3
+      - AC-005.4
+    oracle:
+      criterion: AC-004.3
+      expected: An empty cart shows "Your cart is empty."
+    surface: web
+    technique: state_transition
+    preconditions:
+      - The cart contains exactly one line, "Product A × 1", and no other lines.
+    steps:
+      - Open the site root URL; confirm the cart shows only "Product A × 1".
+      - Press "Remove Product A".
+      - Confirm the cart line is gone.
+      - Confirm the Cart section now shows "Your cart is empty."
+      - 'Confirm the Total now reads "Total: $0.00".'
+    source: edge_case_hunter
+prd_id: PRD-CART-UI
+project: demo-shop
+schema: qa.cases.v1

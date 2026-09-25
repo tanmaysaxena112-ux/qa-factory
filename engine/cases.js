@@ -19,6 +19,7 @@ export function checkCases(doc, prd, { surfaces, schemas }) {
   if (doc.prd_id !== prd.prd_id) problems.push(`cases are for ${doc.prd_id}, PRD is ${prd.prd_id}`);
 
   const reqs = new Map(prd.requirements.map((r) => [r.id, r]));
+  const allCriteria = new Set(prd.requirements.flatMap((r) => [...r.acceptance_criteria, ...(r.edge_cases ?? [])].map((x) => x.id)));
   const seen = new Set();
   for (const c of doc.cases) {
     if (seen.has(c.id)) problems.push(`duplicate case ID ${c.id}`);
@@ -29,9 +30,12 @@ export function checkCases(doc, prd, { surfaces, schemas }) {
       continue;
     }
     if (req.superseded_by) problems.push(`${c.id}: ${c.requirement} is superseded by ${req.superseded_by}`);
-    const known = new Set([...req.acceptance_criteria, ...(req.edge_cases ?? [])].map((x) => x.id));
-    for (const cr of c.criteria) if (!known.has(cr)) problems.push(`${c.id}: ${cr} is not a criterion of ${c.requirement}`);
+    // A case may exercise criteria of several requirements (an add that shows
+    // an error message), but its expected result comes from its own requirement.
+    const own = new Set([...req.acceptance_criteria, ...(req.edge_cases ?? [])].map((x) => x.id));
+    for (const cr of c.criteria) if (!allCriteria.has(cr)) problems.push(`${c.id}: ${cr} is not a criterion of ${doc.prd_id}`);
     if (!c.criteria.includes(c.oracle.criterion)) problems.push(`${c.id}: oracle ${c.oracle.criterion} is not one of its criteria`);
+    else if (!own.has(c.oracle.criterion)) problems.push(`${c.id}: oracle ${c.oracle.criterion} does not belong to its requirement ${c.requirement}`);
     if (!surfaces.includes(c.surface)) problems.push(`${c.id}: surface ${c.surface} is not tested in this project`);
   }
 

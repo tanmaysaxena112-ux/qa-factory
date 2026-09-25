@@ -108,3 +108,15 @@ test('a complete case set passes and edge case proposals merge in', () => {
   assert.equal(merged.questions[0].question, 'Is 2.5 rejected?');
   assert.deepEqual(checkCases(merged.doc, prd, { surfaces: ['api'], schemas }).problems, []);
 });
+
+test('a case may cite other requirements, but its oracle must be its own', () => {
+  const doc = cases([
+    { ...baseCase, id: 'API-CART-01', title: 'add', criteria: ['AC-001.1', 'AC-002.1'], oracle: { criterion: 'AC-001.1', expected: '201' } },
+    { ...baseCase, id: 'API-CART-02', title: 'wrong owner', criteria: ['AC-002.1'], oracle: { criterion: 'AC-002.1', expected: 'total' } },
+    { ...baseCase, id: 'API-CART-03', title: 'ghost', criteria: ['AC-009.1'], oracle: { criterion: 'AC-009.1', expected: 'x' } },
+  ]);
+  const text = checkCases(doc, prd, { surfaces: ['api'], schemas }).problems.join('\n');
+  assert.doesNotMatch(text, /API-CART-01/);
+  assert.match(text, /API-CART-02: oracle AC-002.1 does not belong to its requirement REQ-001/);
+  assert.match(text, /API-CART-03: AC-009.1 is not a criterion of PRD-CART/);
+});
