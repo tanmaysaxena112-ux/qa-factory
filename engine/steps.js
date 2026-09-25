@@ -3,6 +3,8 @@ import { loadAgent } from './agents.js';
 import { minimalEnv, spawnCapture } from './exec.js';
 import { envNamesFor, loadMcpServers, mcpPolicyProblems, pickServers } from './mcp.js';
 import { splitCommand, substitute } from './template.js';
+import { startLocalApp } from '../runners/app.js';
+import { loadProject, projectEnv } from '../runners/project.js';
 
 function resolveCommand(tokens, allowlist, paths) {
   const permitted = allowlist.some((prefix) => prefix.every((part, i) => tokens[i] === part));
@@ -65,12 +67,32 @@ function agentSettings(paths) {
   };
 }
 
-export async function agentStep({ step, ctx, runId, config, paths, evidence, schemas, provider }) {
+// An agent step can ask for the project's app to run for its duration, for
+// example an exploratory session. The browser server is then limited to that
+// origin and writes its screenshots into the step's evidence.
+export async function agentStep(args) {
+  const { step, ctx, paths } = args;
+  if (!step.app) return agentStepInner(args);
+  const project = loadProject(paths.repoRoot, substitute(step.app.project, ctx));
+  const env = projectEnv(project, step.app.env ? substitute(step.app.env, ctx) : 'dev');
+  const app = await startLocalApp(paths.repoRoot, env.local_app);
+  if (!app.ok) return { status: 'failed', error: `BLOCKED: app unavailable: ${app.detail}` };
+  try {
+    return await agentStepInner({ ...args, ctx: { ...ctx, app: { url: app.baseUrl, build: app.build } } });
+  } finally {
+    await app.stop();
+  }
+}
+
+async function agentStepInner({ step, ctx, runId, config, paths, evidence, schemas, provider }) {
   const agent = loadAgent(paths.agents, step.agent);
   const allServers = loadMcpServers(paths.mcpConfig);
   const problems = mcpPolicyProblems(pickServers(allServers, agent.mcp), config.mcp.allowed);
   if (problems.length) return { status: 'failed', error: `MCP policy: ${problems.join('; ')}` };
-  const servers = pickServers(allServers, agent.mcp);
+  const servers = JSON.parse(JSON.stringify(pickServers(allServers, agent.mcp)));
+  if (ctx.app && servers.playwright) {
+    servers.playwright.args = [...servers.playwright.args, '--allowed-origins', new URL(ctx.app.url).origin, '--output-dir', evidence.runDir(runId) + `/steps/${step.id}/browser`];
+  }
 
   const dir = `steps/${step.id}`;
   const cwd = confine(step.cwd ? substitute(step.cwd, ctx) : evidence.runDir(runId), paths);

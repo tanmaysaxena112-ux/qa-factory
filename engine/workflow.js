@@ -54,15 +54,17 @@ export function parseWorkflow(text, { schemas, agentsDir, source = 'workflow' })
     if (kind === 'agent') loadAgent(agentsDir, step.agent);
     if (kind !== 'run' && step.env) throw new Error(`${source}: step "${step.id}": only run steps may declare env`);
     if (kind !== 'agent' && step.cwd) throw new Error(`${source}: step "${step.id}": only agent steps may set cwd`);
+    if (kind !== 'agent' && step.app) throw new Error(`${source}: step "${step.id}": only agent steps may run with an app`);
     const reachable = ancestors(step.id, byId);
-    for (const text of [step.run, step.prompt, step.cwd, step.message].filter(Boolean)) {
+    for (const text of [step.run, step.prompt, step.cwd, step.message, step.app?.project, step.app?.env].filter(Boolean)) {
       for (const ref of references(text)) {
         const [root, name] = ref.split('.');
         if (root === 'params' && !(name in params)) throw new Error(`${source}: step "${step.id}" uses undeclared param "${name}"`);
         if (root === 'steps' && !reachable.has(name)) {
           throw new Error(`${source}: step "${step.id}" reads step "${name}", which is not one of its dependencies`);
         }
-        if (!['params', 'steps', 'run'].includes(root)) throw new Error(`${source}: step "${step.id}" has unknown reference \${${ref}}`);
+        if (root === 'app' && !step.app) throw new Error(`${source}: step "${step.id}" uses \${app...} without an app`);
+        if (!['params', 'steps', 'run', 'app'].includes(root)) throw new Error(`${source}: step "${step.id}" has unknown reference \${${ref}}`);
       }
     }
   }

@@ -1,0 +1,28 @@
+schema: qa.workflow.v1
+name: explore
+description: >
+  A charter-based exploratory session in a real browser against the running
+  app. Findings are candidates; the QA Lead confirms or dismisses each one.
+max_cost_usd: 4
+params:
+  project: { required: true, description: Project folder name }
+  charter: { required: true, description: What to explore and why }
+steps:
+  - id: stage
+    run: qa stage --to explore projects/${params.project}/prd
+
+  - id: explore
+    needs: [stage]
+    agent: exploratory
+    cwd: ${run.dir}/staged/explore
+    app: { project: "${params.project}" }
+    prompt: |
+      Charter: ${params.charter}
+      The app runs at ${app.url} (build ${app.build}). Its health endpoint is /health. INDEX.txt lists the PRDs in your working folder.
+    output: qa.exploration.v1
+    timeout_seconds: 1800
+
+  - id: qa-lead
+    needs: [explore]
+    gate: qa-lead
+    message: Confirm or dismiss each candidate finding; confirmed ones become cases or defects, UNKNOWN ones become PRD open questions.

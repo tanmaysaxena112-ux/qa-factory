@@ -54,7 +54,13 @@
         "gate": { "type": "string", "enum": ["qa-lead"] },
         "message": { "type": "string" },
         "output": { "type": "string", "pattern": "^qa\\.[a-z-]+\\.v[0-9]+$" },
-        "timeout_seconds": { "type": "integer", "minimum": 1 }
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "app": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["project"],
+          "properties": { "project": { "type": "string" }, "env": { "type": "string" } }
+        }
       },
       "oneOf": [
         { "type": "object", "required": ["run"], "properties": { "run": { "type": "string" } } },

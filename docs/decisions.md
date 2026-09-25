@@ -73,3 +73,18 @@ Each decision states the context, the choice and what it costs. Newest last.
 **Decision.** `qa report verify` recomputes pass, fail, blocked, not run and flaky from the results and re-execution files and fails the run on any difference. It runs after the reporter in every regression workflow. The reporter writes the prose; the platform owns the numbers.
 
 **Cost.** None.
+
+## D-010: The always-on layer
+
+**Context.** Phase 4 turns single runs into an operating platform: history, trends, learning from escapes, exploration and scheduling, on free tools only.
+
+**Decision.**
+- Every finished run records each result, the commit under test and re-executions. Flakiness is measured only on one commit, so a fix is never mistaken for a flaky test.
+- Coverage, drift and a dashboard are generated from history, calibration records and the PRDs. Targets without data read UNKNOWN; nothing is estimated.
+- Performance (Lighthouse), load (k6) and security scans measure against budgets the QA Lead sets in `project.yml`. A missing tool is BLOCKED; ZAP needs Docker and reports BLOCKED until it is installed.
+- Every escape is analysed by the Escape Analyst, its accepted proposals are applied, and the escaped defect becomes a permanent seeded fault so calibration proves it can never escape again (ESC-001 became `ui-unsafe-names`).
+- The Exploratory agent runs with the app and a browser limited to that app's origin; its findings are candidates the QA Lead confirms.
+- The golden run re-proves the platform after any upgrade.
+- CI runs on GitHub-hosted Linux for every push. Nightly runs use the QA Lead's Mac as a self-hosted runner, triggered only by schedule or by hand, never by pull requests.
+
+**Cost.** Design-versus-build comparison against Figma is not built: the demo project has no design file, and the Figma server requires an interactive login. It is added when a project brings a Figma file.

@@ -1,0 +1,43 @@
+name: nightly
+# Runs only on the QA Lead's own Mac, registered as a self-hosted runner, and
+# only on a schedule or by hand: never on pull requests, so no outside code
+# ever reaches that machine.
+on:
+  schedule:
+    - cron: '30 21 * * *' # 03:00 IST
+  workflow_dispatch:
+    inputs:
+      regression:
+        description: Also run the API regression with agents (uses Claude)
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+jobs:
+  nightly:
+    runs-on: [self-hosted, macOS, qa-factory]
+    timeout-minutes: 120
+    env:
+      QA_APPROVER: github-actions-nightly
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci
+      - name: Health
+        run: node cli/bin/qa.js doctor --offline
+      - name: Golden run (full suite and calibration)
+        run: node cli/bin/qa.js run golden --param project=demo-shop
+      - name: Scans (pauses at the QA Lead gate, exit 10 is expected)
+        run: node cli/bin/qa.js run scans --param project=demo-shop || [ $? -eq 10 ]
+      - name: API regression (pauses at the release gate, exit 10 is expected)
+        if: github.event_name == 'schedule' || inputs.regression
+        run: node cli/bin/qa.js run api-regression --param project=demo-shop --param prd_id=PRD-CART || [ $? -eq 10 ]
+      - name: Dashboard
+        run: node cli/bin/qa.js dashboard --project demo-shop --out reports/dashboard.html
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dashboard
+          path: reports/dashboard.html
+          retention-days: 30

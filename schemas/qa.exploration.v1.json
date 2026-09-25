@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.exploration.v1",
+  "title": "Exploratory session output: candidate findings, each tied to a PRD criterion or marked UNKNOWN",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "charter", "build", "session_notes", "findings"],
+  "properties": {
+    "schema": { "const": "qa.exploration.v1" },
+    "charter": { "type": "string", "minLength": 1 },
+    "build": { "type": "string", "minLength": 1 },
+    "session_notes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "steps", "observed", "expected", "oracle", "severity"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "steps": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "observed": { "type": "string", "minLength": 1 },
+          "expected": { "type": "string", "minLength": 1 },
+          "oracle": { "type": "string", "pattern": "^((PRD-[A-Z0-9-]+ )?(AC|EC)-[0-9]{3}\\.[0-9]+|UNKNOWN)$" },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low", "UNKNOWN"] },
+          "screenshot": { "type": "string" }
+        }
+      }
+    }
+  }
+}

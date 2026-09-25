@@ -44,7 +44,7 @@ npm run qa -- evidence verify RUN-YYYY-MMDD-001
 
 ## Status
 
-Phases 0 to 3 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
+Phases 0 to 4 are complete. The API lane has run end to end with real agents on the included demo shop (`projects/demo-shop`):
 
 | Stage | What happened |
 |---|---|
@@ -78,7 +78,18 @@ Phase 3, the mobile lane, ran the pipeline in real Chrome on an Android 15 emula
 | Regression | 4 findings, blind reviewer rejected; the fix passed 40/40 and the web visual check caught the layout change it caused |
 | Certification | Mobile 40/40 with 4/4 faults, web 49/49 with 5/5, API 37/37 with 7/7 |
 
-Next: the always-on layer (scheduled regression, flake tracking, escape analysis, performance and security scans).
+Phase 4, the always-on layer, turned runs into an operating platform:
+
+| Capability | First result |
+|---|---|
+| Result history and flake detection | 28 runs, 123 tests, 0 flaky |
+| Coverage map and drift alert | 52/52 criteria passing, no drift |
+| Dashboard | All four quality targets from real data; escape rate 10 percent, shown in red |
+| Performance, load and security scans | Lighthouse 100/100/96, k6 p95 0.8 ms over 896,180 requests; security scan found no security headers, then passed after the fix; ZAP blocked without Docker |
+| Escape analysis | ESC-001 traced to a manual case nobody ran; the defect is now a seeded fault caught by a new automated test |
+| Exploratory agent | 162 audited browser actions on money and quantities, no contradiction found |
+| Golden run | Full suite plus API and web calibration in one command |
+| CI and nightly | GitHub Actions workflows; nightly on a self-hosted Mac, never on pull requests |
 
 ## Documentation
 

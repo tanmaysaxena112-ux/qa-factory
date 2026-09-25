@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+    branches: [main, 'phase-*']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Validators
+        run: |
+          node cli/bin/qa.js workflow validate
+          node cli/bin/qa.js prd validate --project demo-shop
+          node cli/bin/qa.js cases validate --project demo-shop
+          node cli/bin/qa.js api validate --project demo-shop
+          node cli/bin/qa.js web validate --project demo-shop
+          node cli/bin/qa.js mobile validate --project demo-shop
+      - name: Test suite (device tests skip without an Android device)
+        run: npm test
