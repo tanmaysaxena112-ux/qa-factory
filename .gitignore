@@ -1,0 +1,10 @@
+node_modules/
+evidence/
+reports/
+logs/
+qa.sqlite
+qa.sqlite-*
+.env
+.env.*
+!.env.example
+.DS_Store

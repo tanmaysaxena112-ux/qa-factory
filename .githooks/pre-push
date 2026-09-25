@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+// Free-plan substitute for branch protection: pushing to main needs an explicit
+// human confirmation. Agents cannot provide it, because the guard hook refuses
+// any command that starts with an environment assignment or is not allowlisted.
+import { readFileSync } from 'node:fs';
+
+const updates = readFileSync(0, 'utf8').trim().split('\n').filter(Boolean);
+const touchesMain = updates.some((line) => /^refs\/heads\/(main|master)$/.test(line.split(' ')[2] ?? ''));
+
+if (touchesMain && process.env.QA_LEAD_PUSH !== 'yes') {
+  process.stderr.write(
+    [
+      'Push to main blocked by the QA Factory gate.',
+      'Only the QA Lead updates main. To confirm, run:',
+      '  QA_LEAD_PUSH=yes git push',
+      '',
+    ].join('\n'),
+  );
+  process.exit(1);
+}
+process.exit(0);

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.workflow.v1",
+  "title": "Workflow definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "steps"],
+  "properties": {
+    "schema": { "const": "qa.workflow.v1" },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "description": { "type": "string" },
+    "max_cost_usd": { "type": "number", "exclusiveMinimum": 0 },
+    "params": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string" },
+          "required": { "type": "boolean" },
+          "default": { "type": "string" }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "description": { "type": "string" },
+        "needs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        },
+        "run": { "type": "string", "minLength": 1 },
+        "env": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+        },
+        "agent": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "prompt": { "type": "string", "minLength": 1 },
+        "cwd": { "type": "string" },
+        "gate": { "type": "string", "enum": ["qa-lead"] },
+        "message": { "type": "string" },
+        "output": { "type": "string", "pattern": "^qa\\.[a-z-]+\\.v[0-9]+$" },
+        "timeout_seconds": { "type": "integer", "minimum": 1 }
+      },
+      "oneOf": [
+        { "type": "object", "required": ["run"], "properties": { "run": { "type": "string" } } },
+        {
+          "type": "object",
+          "required": ["agent", "prompt", "output"],
+          "properties": { "agent": { "type": "string" }, "prompt": { "type": "string" }, "output": { "type": "string" } }
+        },
+        { "type": "object", "required": ["gate"], "properties": { "gate": { "type": "string" } } }
+      ]
+    }
+  }
+}

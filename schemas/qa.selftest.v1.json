@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.selftest.v1",
+  "title": "Self-test agent output: a summary of the schema listing produced by the runner step",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_count", "summary"],
+  "properties": {
+    "schema": { "const": "qa.selftest.v1" },
+    "schema_count": { "type": "integer", "minimum": 0 },
+    "summary": { "type": "string", "minLength": 1 }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.testplan.v1",
+  "title": "Planner output: which tests run and why",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project", "env", "tests"],
+  "properties": {
+    "schema": { "const": "qa.testplan.v1" },
+    "project": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "env": { "type": "string", "enum": ["dev", "uat"] },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["test_id", "requirement", "criteria", "surface", "reason"],
+        "properties": {
+          "test_id": { "type": "string", "pattern": "^(API|WEB|MOB)-[A-Z0-9]+-[0-9]{2,}$" },
+          "requirement": { "type": "string", "pattern": "^REQ-[0-9]{3}$" },
+          "criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" }
+          },
+          "surface": { "type": "string", "enum": ["api", "web", "mobile"] },
+          "reason": { "type": "string", "enum": ["changed_code", "requirement_coverage", "risk", "historical_failure"] },
+          "reason_detail": { "type": "string" }
+        }
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["test_id", "why"],
+        "properties": {
+          "test_id": { "type": "string" },
+          "why": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

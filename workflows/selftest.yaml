@@ -1,0 +1,26 @@
+schema: qa.workflow.v1
+name: selftest
+description: >
+  Exercises all three step kinds. A runner lists the schemas, a contained agent
+  reads that evidence and reports a schema-valid summary, and the run pauses for
+  the QA Lead.
+max_cost_usd: 0.5
+steps:
+  - id: list-schemas
+    description: Deterministic runner step, no AI
+    run: qa schemas --json
+
+  - id: summarise
+    description: Contained agent; can only read the run's evidence folder
+    needs: [list-schemas]
+    agent: selftest-reader
+    prompt: |
+      Read the file at ${steps.list-schemas.stdout_file} and report how many schemas it lists.
+    output: qa.selftest.v1
+    timeout_seconds: 300
+
+  - id: qa-lead
+    description: The run waits here until a person approves or rejects it
+    needs: [summarise]
+    gate: qa-lead
+    message: Confirm the self-test summary matches the schema listing.

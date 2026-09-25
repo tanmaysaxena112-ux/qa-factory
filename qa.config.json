@@ -1,0 +1,24 @@
+{
+  "github": {
+    "owner": "tanmaysaxena112-ux",
+    "repo": "qa-factory"
+  },
+  "agent": {
+    "provider": "claude",
+    "timeoutSeconds": 900
+  },
+  "runner": {
+    "timeoutSeconds": 1800,
+    "allowlist": [
+      ["qa"],
+      ["git"],
+      ["gh"],
+      ["newman"],
+      ["npx", "playwright"],
+      ["npm", "run"]
+    ]
+  },
+  "mcp": {
+    "allowed": ["github", "playwright", "figma", "context7"]
+  }
+}

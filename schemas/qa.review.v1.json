@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa.review.v1",
+  "title": "Blind reviewer verdict",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "verdict", "criteria", "reexecuted", "summary"],
+  "properties": {
+    "schema": { "const": "qa.review.v1" },
+    "run_id": { "type": "string", "pattern": "^RUN-[0-9]{4}-[0-9]{4}-[0-9]{3}$" },
+    "verdict": {
+      "type": "string",
+      "enum": ["APPROVED", "APPROVED_WITH_RISKS", "REWORK_REQUIRED", "REJECTED", "BLOCKED_BY_ENVIRONMENT", "INSUFFICIENT_EVIDENCE"]
+    },
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(AC|EC)-[0-9]{3}\\.[0-9]+$" },
+          "status": { "type": "string", "enum": ["met", "unmet", "not_verified"] },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "reexecuted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["test_id", "original", "rerun", "reproduced"],
+        "properties": {
+          "test_id": { "type": "string" },
+          "original": { "type": "string", "enum": ["PASS", "FAIL"] },
+          "rerun": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+          "reproduced": { "type": "boolean" }
+        }
+      }
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string", "minLength": 1 }
+  }
+}
