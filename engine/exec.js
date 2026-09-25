@@ -30,15 +30,24 @@ export function spawnCapture(command, args, { cwd, env, timeoutMs, maxBytes = 50
     };
     child.stdout.on('data', collect(out));
     child.stderr.on('data', collect(err));
-    const timer = timeoutMs
-      ? setTimeout(() => {
-          timedOut = true;
-          child.kill('SIGTERM');
-          setTimeout(() => child.kill('SIGKILL'), 5000).unref();
-        }, timeoutMs)
+    // Timers use a clock that stops while the machine sleeps, so a deadline on
+    // the wall clock is checked as well; otherwise a sleep can hang a run.
+    const deadline = timeoutMs ? Date.now() + timeoutMs : null;
+    const expire = () => {
+      if (timedOut) return;
+      timedOut = true;
+      child.kill('SIGTERM');
+      setTimeout(() => child.kill('SIGKILL'), 5000).unref();
+    };
+    const timer = timeoutMs ? setTimeout(expire, timeoutMs) : null;
+    const watch = timeoutMs
+      ? setInterval(() => {
+          if (Date.now() > deadline) expire();
+        }, Math.min(10000, timeoutMs))
       : null;
     const finish = (code, spawnError) => {
       if (timer) clearTimeout(timer);
+      if (watch) clearInterval(watch);
       resolvePromise({
         code,
         stdout: Buffer.concat(out).toString('utf8'),

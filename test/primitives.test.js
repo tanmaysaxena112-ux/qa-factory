@@ -54,3 +54,11 @@ test('sealed evidence detects tampering', (t) => {
   assert.ok(result.problems.includes('changed: steps/a/stdout.txt'));
   assert.ok(result.problems.includes('added after sealing: extra.txt'));
 });
+
+test('a process that outlives its deadline is killed and reported as timed out', async () => {
+  const { spawnCapture } = await import('../engine/exec.js');
+  const started = Date.now();
+  const result = await spawnCapture(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { timeoutMs: 300 });
+  assert.equal(result.timedOut, true);
+  assert.ok(Date.now() - started < 10000);
+});
