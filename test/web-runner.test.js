@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { REPO_ROOT, resolvePaths } from '../engine/config.js';
 import { loadSchemas } from '../engine/schemas.js';
 import { loadProject } from '../runners/project.js';
-import { compileSpec, runWebTests, webStepProblems } from '../runners/web.js';
+import { aggregateBrowsers, compileSpec, runWebTests, webStepProblems } from '../runners/web.js';
 import { tempDir } from './helpers.js';
 
 const schemas = loadSchemas(resolvePaths().schemas);
@@ -115,7 +115,20 @@ test('field values are checked with toHaveValue, never text', () => {
   assert.ok(spec.includes('toHaveValue("1")'));
 });
 
-test('a test failing in one browser is FAIL even when it passes in the first', { timeout: 180000 }, async (t) => {
+test('browser results combine: any failure fails, only declared skips are excused', () => {
+  const all = ['chromium', 'firefox', 'webkit', 'mobile'];
+  const run = (statuses) => all.map((browser, i) => ({ browser, status: statuses[i], errors: [] }));
+  // The shape of RUN-2026-0925-015: passes first, fails in two other engines.
+  assert.equal(aggregateBrowsers(run(['passed', 'failed', 'failed', 'passed']), all), 'FAIL');
+  assert.equal(aggregateBrowsers(run(['passed', 'passed', 'passed', 'passed']), all), 'PASS');
+  assert.equal(aggregateBrowsers(run(['passed', 'passed', 'skipped', 'passed']), all), 'NOT_RUN');
+  assert.equal(aggregateBrowsers(run(['passed', 'passed', 'skipped', 'passed']), all, new Set(['webkit'])), 'PASS');
+  assert.equal(aggregateBrowsers(run(['passed', 'passed', 'passed']).slice(0, 3), all), 'NOT_RUN', 'a missing browser is never a pass');
+  assert.equal(aggregateBrowsers([{ browser: 'chromium', status: 'failed', errors: ["A snapshot doesn't exist at x"] }], ['chromium']), 'BLOCKED');
+});
+
+// The real-browser version depends on macOS WebKit skipping buttons on Tab.
+test('a test failing in one browser is FAIL even when it passes in the first', { timeout: 180000, skip: process.platform !== 'darwin' && 'relies on WebKit on macOS skipping buttons on Tab' }, async (t) => {
   // WebKit on macOS skips buttons on Tab; Chromium reaches them. Without a
   // declared skip, the WebKit failure must fail the whole test.
   const keyboard = {

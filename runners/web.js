@@ -149,6 +149,19 @@ function collectSpecs(suite, out = []) {
 
 const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
 
+// Combines one test's Playwright entries (one per project) into a status. A
+// test passes only when every requested browser passed or was skipped by a
+// declared exception.
+export function aggregateBrowsers(perBrowser, browsers, declaredSkips = new Set()) {
+  const noBaseline = perBrowser.some((b) => b.errors.some((e) => /snapshot doesn't exist/i.test(e)));
+  const failed = perBrowser.some((b) => ['failed', 'timedOut', 'interrupted'].includes(b.status));
+  const allPassed =
+    perBrowser.length === browsers.length &&
+    perBrowser.every((b) => b.status === 'passed' || (b.status === 'skipped' && declaredSkips.has(b.browser))) &&
+    perBrowser.some((b) => b.status === 'passed');
+  return noBaseline ? 'BLOCKED' : failed ? 'FAIL' : allPassed ? 'PASS' : 'NOT_RUN';
+}
+
 // Runs web tests against a freshly started app in every requested browser. A
 // test passes only when it passes in all of them.
 export async function runWebTests({ repoRoot, project, envName, tests, sink, runId, label, appEnv = {}, expectedBuild, browsers = Object.keys(BROWSERS), updateSnapshots = 'none', schemas, stopAfterFirstFailure = false }) {
@@ -213,20 +226,14 @@ export async function runWebTests({ repoRoot, project, envName, tests, sink, run
         };
       });
       unexpectedSeen += perBrowser.filter((b) => ['failed', 'timedOut', 'interrupted'].includes(b.status)).length;
-      const noBaseline = perBrowser.some((b) => b.errors.some((e) => /snapshot doesn't exist/i.test(e)));
-      const failed = perBrowser.some((b) => ['failed', 'timedOut', 'interrupted'].includes(b.status));
       // A browser may be skipped only where the test declares it, with a reason.
       const declaredSkips = new Set((t.skip_browsers ?? []).map((s) => s.browser));
-      const allPassed =
-        perBrowser.length === browsers.length &&
-        perBrowser.every((b) => b.status === 'passed' || (b.status === 'skipped' && declaredSkips.has(b.browser))) &&
-        perBrowser.some((b) => b.status === 'passed');
+      const status = aggregateBrowsers(perBrowser, browsers, declaredSkips);
       const detailFile = sink.write(`web/${label}/${t.test_id}.json`, { test_id: t.test_id, oracle: t.oracle, title: t.title, build: app.build, skip_browsers: t.skip_browsers ?? [], browsers: perBrowser.map(({ attachments, ...rest }) => ({ ...rest, attachments: attachments.map((a) => ({ name: a.name, path: relative(evidenceBase, a.path).split(sep).join('/') })) })) });
       const artefacts = [detailFile, ...perBrowser.flatMap((b) => b.attachments.map((a) => a.path))].map((file) => ({
         path: relative(evidenceBase, file).split(sep).join('/'),
         sha256: sha256File(file),
       }));
-      const status = noBaseline ? 'BLOCKED' : failed ? 'FAIL' : allPassed ? 'PASS' : 'NOT_RUN';
       results.push({
         schema: 'qa.result.v1',
         run_id: runId,
