@@ -31,9 +31,19 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["goto", "click", "fill", "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_enabled", "expect_disabled", "expect_count", "check_a11y", "screenshot"]
+          "enum": [
+            "goto", "click", "fill", "press", "set_viewport", "request",
+            "expect_text", "expect_contains", "expect_visible", "expect_hidden", "expect_enabled", "expect_disabled", "expect_count", "expect_focused",
+            "expect_stacked", "expect_side_by_side", "check_a11y", "screenshot"
+          ]
         },
         "target": { "$ref": "#/$defs/target" },
+        "second": { "$ref": "#/$defs/target" },
+        "key": { "type": "string", "enum": ["Tab", "Shift+Tab", "Enter", "Space", "Escape"] },
+        "width": { "type": "integer", "minimum": 200, "maximum": 3000 },
+        "height": { "type": "integer", "minimum": 200, "maximum": 3000 },
+        "method": { "type": "string", "enum": ["GET", "POST", "DELETE"] },
+        "body": {},
         "value": { "type": "string" },
         "count": { "type": "integer", "minimum": 0 },
         "path": { "type": "string", "pattern": "^/" },

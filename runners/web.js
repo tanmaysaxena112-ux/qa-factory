@@ -30,6 +30,12 @@ const NEEDS = {
   expect_count: ['target', 'count'],
   check_a11y: [],
   screenshot: ['name'],
+  press: ['key'],
+  expect_focused: ['target'],
+  set_viewport: ['width', 'height'],
+  expect_stacked: ['target', 'second'],
+  expect_side_by_side: ['target', 'second'],
+  request: ['method', 'path'],
 };
 
 export function webStepProblems(test) {
@@ -37,7 +43,9 @@ export function webStepProblems(test) {
   test.steps.forEach((s, i) => {
     for (const field of NEEDS[s.action]) if (s[field] === undefined) problems.push(`${test.test_id} step ${i + 1} (${s.action}) needs "${field}"`);
   });
-  if (test.steps[0]?.action !== 'goto') problems.push(`${test.test_id} must start with a goto step`);
+  if (!['goto', 'request', 'set_viewport'].includes(test.steps[0]?.action) || !test.steps.some((s) => s.action === 'goto')) {
+    problems.push(`${test.test_id} must load the page with a goto step, after any setup requests or viewport change`);
+  }
   return problems;
 }
 
@@ -70,6 +78,17 @@ function stepCode(s) {
         'expect(axe.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);',
       ].join('\n      ');
     case 'screenshot': return `await expect(page).toHaveScreenshot(${J(`${s.name}.png`)}, { fullPage: true, animations: 'disabled' });`;
+    case 'press': return `await page.keyboard.press(${J(s.key === 'Space' ? ' ' : s.key)});`;
+    case 'expect_focused': return `await expect(${loc}).toBeFocused();`;
+    case 'set_viewport': return `await page.setViewportSize({ width: ${J(s.width)}, height: ${J(s.height)} });`;
+    case 'expect_stacked':
+      // The second element sits below the first, not beside it.
+      return `{ const a = await ${loc}.boundingBox(); const b = await ${locator(s.second)}.boundingBox(); expect(b.y).toBeGreaterThanOrEqual(a.y + a.height - 1); }`;
+    case 'expect_side_by_side':
+      return `{ const a = await ${loc}.boundingBox(); const b = await ${locator(s.second)}.boundingBox(); expect(b.x).toBeGreaterThanOrEqual(a.x + a.width - 1); expect(b.y).toBeLessThan(a.y + a.height); }`;
+    case 'request':
+      // Changes server state mid-test, as another tab or shopper would.
+      return `{ const r = await page.request.fetch(${J(s.path)}, { method: ${J(s.method)}${s.body !== undefined ? `, data: ${J(s.body)}` : ''} }); expect(r.ok(), ${J(`${s.method} ${s.path}`)}).toBeTruthy(); }`;
     default: throw new Error(`Unknown action ${s.action}`);
   }
 }

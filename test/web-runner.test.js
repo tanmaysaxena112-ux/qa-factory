@@ -51,7 +51,7 @@ test('test data reaches the generated spec only as JSON literals', () => {
 test('web steps must carry what their action needs and start with a page load', () => {
   const problems = webStepProblems({ test_id: 'WEB-SHOP-02', steps: [{ action: 'click' }] });
   assert.ok(problems.some((p) => p.includes('needs "target"')));
-  assert.ok(problems.some((p) => p.includes('must start with a goto')));
+  assert.ok(problems.some((p) => p.includes('must load the page with a goto step')));
 });
 
 test('a real browser run passes on the healthy build and fails on a UI fault', { timeout: 120000 }, async (t) => {
@@ -72,4 +72,40 @@ test('a visual check without an approved baseline is BLOCKED, never passed', { t
   const sink = fileSink(t);
   const run = await runWebTests({ repoRoot: REPO_ROOT, project, envName: 'dev', tests: [visual], schemas, sink, runId: 'RUN-2026-0925-001', label: 'main', browsers: ['chromium'] });
   assert.equal(run.blocked, 1, readFileSync(join(sink.base, 'web/main/playwright-stdout.txt'), 'utf8').slice(0, 500));
+});
+
+test('keyboard, viewport, layout and mid-test requests work in a real browser', { timeout: 120000 }, async (t) => {
+  const tests = [
+    {
+      test_id: 'WEB-SHOP-03', oracle: 'AC-001.1', title: 'phone width stacks the sections',
+      steps: [
+        { action: 'set_viewport', width: 600, height: 900 },
+        { action: 'goto', path: '/' },
+        { action: 'expect_stacked', target: { role: 'heading', name: 'Products' }, second: { role: 'heading', name: 'Cart' } },
+      ],
+    },
+    {
+      test_id: 'WEB-SHOP-04', oracle: 'AC-001.1', title: 'desktop width places them side by side',
+      steps: [
+        { action: 'set_viewport', width: 1200, height: 900 },
+        { action: 'goto', path: '/' },
+        { action: 'expect_side_by_side', target: { role: 'heading', name: 'Products' }, second: { role: 'heading', name: 'Cart' } },
+      ],
+    },
+    {
+      test_id: 'WEB-SHOP-05', oracle: 'AC-001.1', title: 'keyboard reaches the first quantity field and a line removed elsewhere shows a message',
+      steps: [
+        { action: 'goto', path: '/' },
+        { action: 'press', key: 'Tab' },
+        { action: 'expect_focused', target: { label: 'Quantity for Notebook' } },
+        { action: 'click', target: { role: 'button', name: 'Add Notebook to cart' } },
+        { action: 'expect_visible', target: { role: 'button', name: 'Remove Notebook' } },
+        { action: 'request', method: 'DELETE', path: '/cart/items/P-1' },
+        { action: 'click', target: { role: 'button', name: 'Remove Notebook' } },
+        { action: 'expect_text', target: { role: 'alert' }, value: 'That item is not in your cart.' },
+      ],
+    },
+  ];
+  const run = await runWebTests({ repoRoot: REPO_ROOT, project, envName: 'dev', tests, schemas, sink: fileSink(t), runId: 'RUN-2026-0925-001', label: 'main', browsers: ['chromium'] });
+  assert.equal(run.pass, 3, JSON.stringify(run.results.map((r) => [r.test_id, r.status])));
 });
