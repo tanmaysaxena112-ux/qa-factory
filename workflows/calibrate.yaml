@@ -7,10 +7,11 @@ description: >
 params:
   project: { required: true, description: Project folder name }
   env: { default: dev, description: dev or uat }
+  surface: { default: api, description: api or web }
 steps:
   - id: validate
-    run: qa api validate --project ${params.project}
+    run: qa ${params.surface} validate --project ${params.project}
   - id: calibrate
     needs: [validate]
-    run: qa calibrate --project ${params.project} --env ${params.env}
-    timeout_seconds: 900
+    run: qa calibrate --project ${params.project} --env ${params.env} --surface ${params.surface}
+    timeout_seconds: 3600
