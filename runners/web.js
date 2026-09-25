@@ -107,6 +107,7 @@ export function compileSpec(tests, resetPath) {
   ];
   for (const t of tests) {
     lines.push(`test(${J(`${t.test_id} ${t.title}`)}, async ({ page }, testInfo) => {`);
+    for (const skip of t.skip_browsers ?? []) lines.push(`  test.skip(testInfo.project.name === ${J(skip.browser)}, ${J(skip.reason)});`);
     t.steps.forEach((s, i) => {
       lines.push(`  await test.step(${J(`${i + 1}. ${s.action}${s.target ? ` ${J(s.target)}` : ''}`)}, async () => {`);
       lines.push(`      ${stepCode(s)}`);
@@ -192,13 +193,16 @@ export async function runWebTests({ repoRoot, project, envName, tests, sink, run
     const specs = collectSpecs({ suites: report.suites });
     const evidenceBase = sink.dir('');
     const results = [];
+    let unexpectedSeen = 0;
     for (const t of tests) {
-      const matched = specs.find((s) => s.title.startsWith(`${t.test_id} `));
-      if (!matched) {
+      // Playwright reports one spec entry per project (engine or viewport), so a
+      // test's result is spread over several entries; all of them count.
+      const matched = specs.filter((s) => s.title.startsWith(`${t.test_id} `));
+      if (!matched.length) {
         results.push({ schema: 'qa.result.v1', run_id: runId, test_id: t.test_id, surface: 'web', status: 'NOT_RUN', artefacts: [] });
         continue;
       }
-      const perBrowser = matched.tests.map((run) => {
+      const perBrowser = matched.flatMap((s) => s.tests).map((run) => {
         const r = run.results.at(-1) ?? {};
         return {
           browser: run.projectName,
@@ -208,10 +212,16 @@ export async function runWebTests({ repoRoot, project, envName, tests, sink, run
           duration_ms: r.duration ?? 0,
         };
       });
+      unexpectedSeen += perBrowser.filter((b) => ['failed', 'timedOut', 'interrupted'].includes(b.status)).length;
       const noBaseline = perBrowser.some((b) => b.errors.some((e) => /snapshot doesn't exist/i.test(e)));
       const failed = perBrowser.some((b) => ['failed', 'timedOut', 'interrupted'].includes(b.status));
-      const allPassed = perBrowser.length > 0 && perBrowser.every((b) => b.status === 'passed');
-      const detailFile = sink.write(`web/${label}/${t.test_id}.json`, { test_id: t.test_id, oracle: t.oracle, title: t.title, build: app.build, browsers: perBrowser.map(({ attachments, ...rest }) => ({ ...rest, attachments: attachments.map((a) => ({ name: a.name, path: relative(evidenceBase, a.path).split(sep).join('/') })) })) });
+      // A browser may be skipped only where the test declares it, with a reason.
+      const declaredSkips = new Set((t.skip_browsers ?? []).map((s) => s.browser));
+      const allPassed =
+        perBrowser.length === browsers.length &&
+        perBrowser.every((b) => b.status === 'passed' || (b.status === 'skipped' && declaredSkips.has(b.browser))) &&
+        perBrowser.some((b) => b.status === 'passed');
+      const detailFile = sink.write(`web/${label}/${t.test_id}.json`, { test_id: t.test_id, oracle: t.oracle, title: t.title, build: app.build, skip_browsers: t.skip_browsers ?? [], browsers: perBrowser.map(({ attachments, ...rest }) => ({ ...rest, attachments: attachments.map((a) => ({ name: a.name, path: relative(evidenceBase, a.path).split(sep).join('/') })) })) });
       const artefacts = [detailFile, ...perBrowser.flatMap((b) => b.attachments.map((a) => a.path))].map((file) => ({
         path: relative(evidenceBase, file).split(sep).join('/'),
         sha256: sha256File(file),
@@ -227,6 +237,11 @@ export async function runWebTests({ repoRoot, project, envName, tests, sink, run
         duration_ms: perBrowser.reduce((sum, b) => sum + b.duration_ms, 0),
         artefacts: status === 'BLOCKED' || status === 'NOT_RUN' ? [] : artefacts,
       });
+    }
+    // Integrity check: every run Playwright counted as unexpected must show up
+    // as a failed test here. A mismatch means the results cannot be trusted.
+    if ((report.stats?.unexpected ?? 0) !== unexpectedSeen) {
+      throw new Error(`Result aggregation mismatch: Playwright reports ${report.stats?.unexpected} failed runs, the results account for ${unexpectedSeen}`);
     }
     return finish(results);
   } finally {

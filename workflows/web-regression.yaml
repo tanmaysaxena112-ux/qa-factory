@@ -50,14 +50,14 @@ steps:
 
   - id: stage-review
     needs: [rerun]
-    run: qa stage --to review run:web/main run:web/rerun projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases
+    run: qa stage --to review run:web/main run:web/rerun projects/${params.project}/prd/${params.prd_id}.md projects/${params.project}/cases projects/${params.project}/web/baselines
 
   - id: review
     needs: [stage-review]
     agent: blind-reviewer
     cwd: ${run.dir}/staged/review
     prompt: |
-      Review run ${run.id} against ${params.prd_id}. Results: web/main/results.json. Re-execution: web/rerun/comparison.json. Screenshots are PNG files under web/main/output; read the ones you need. INDEX.txt lists every file.
+      Review run ${run.id} against ${params.prd_id}. Results: web/main/results.json. Re-execution: web/rerun/comparison.json. Screenshots are PNG files under web/main/output; the approved visual baselines are under projects/${params.project}/web/baselines. Read the ones you need. INDEX.txt lists every file.
     output: qa.review.v1
     timeout_seconds: 1500
 

@@ -116,6 +116,7 @@ Acceptance criteria:
 - AC-008.3: Every control can be reached with the Tab key and activated from the keyboard.
 
 Edge cases:
+- EC-008.3: In WebKit on macOS the Tab key skips buttons unless the user enables keyboard navigation (Option+Tab reaches them), as the operating system defines. Tab-only reachability of buttons is verified in Chromium and Firefox; WebKit is excluded from that check with this reason.
 - EC-008.2: Disabled controls, such as an "Out of stock" button, are not reachable with the Tab key and are excluded from AC-008.3.
 - EC-008.1: Automated checks cover only part of WCAG 2.2 AA; conformance also needs a manual review with a screen reader, which is reported as manual.
 
@@ -135,3 +136,4 @@ Acceptance criteria:
 - 2026-09-25 critique by prd-critic: 22 issues (run RUN-2026-0925-009).
 - 2026-09-25 approved by claude-code on behalf of the QA Lead (github:tanmaysaxena112-ux). Decisions: stock shown as a static "<n> in stock"; prices are whole cents; quantity field accepts typing and keeps the value after a rejection; out-of-stock quantity field stays present; cart line order undefined; "immediately" means without reload within 2 seconds; newest message replaces the previous one; messages for 404 on add and remove defined; server errors, offline, double submission and cross-tab changes out of scope; product names shown as plain text; engines are those bundled with Playwright 1.63; breakpoint 700 pixels; automated accessibility via axe-core plus keyboard checks, with screen reader review manual; visual check blocks on a missing baseline and fails above 1 percent difference. Risk raised to medium for REQ-003, REQ-004, REQ-006 and REQ-007 because failures there change what a shopper buys or can do.
 - 2026-09-25 edge cases EC-003.4, EC-006.4, EC-006.5, EC-007.1 and EC-008.2 added and EC-002.2 widened by claude-code on behalf of the QA Lead, answering seven open questions from edge-case-hunter (run RUN-2026-0925-010).
+- 2026-09-25 EC-008.3 added by claude-code on behalf of the QA Lead after RUN-2026-0925-015: a probe showed WebKit on macOS skips buttons on Tab by platform default while Chromium and Firefox reach every control in order.

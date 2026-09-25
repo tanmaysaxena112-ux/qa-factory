@@ -18,6 +18,10 @@ Every agent is started with:
 
 Agent roles may never list `Bash`, `WebFetch`, `WebSearch` or sub-agent tools; the loader refuses them.
 
+## Web runner
+
+Web tests are data compiled into Playwright specs; every value enters the generated code through JSON encoding, so test content cannot become code. Specs run in a cache folder inside the repository and every generated file is copied into the run's evidence. Browsers run headless against the local app only. Screenshots cannot be redacted, which is why only dev and UAT test accounts may ever appear in a web session.
+
 ## Guard hook
 
 `.claude/hooks/guard.js` runs before every tool call, for agents and for interactive sessions in this repository.

@@ -183,12 +183,13 @@ export async function runCommand(command, rest, values) {
       // requirement, so a clean run still re-proves the riskiest behaviour.
       const highRisk = new Set();
       for (const prdFile of projectPrds(paths.repoRoot, project.name)) {
-        for (const req of loadPrdIndex(prdFile, schemas).requirements) if (req.risk === 'high') highRisk.add(req.id);
+        const prd = loadPrdIndex(prdFile, schemas);
+        for (const req of prd.requirements) if (req.risk === 'high') highRisk.add(`${prd.prd_id}:${req.id}`);
       }
       const ids = (filter) => previous.filter(filter).map((r) => r.test_id).sort();
       const pick = [
         ids((r) => r.status === 'FAIL')[0],
-        ids((r) => r.status === 'PASS' && highRisk.has(loaded.cases.get(r.test_id)?.requirement))[0],
+        ids((r) => r.status === 'PASS' && highRisk.has(`${loaded.cases.get(r.test_id)?.prd_id}:${loaded.cases.get(r.test_id)?.requirement}`))[0],
         ids((r) => r.status === 'PASS')[0],
       ].filter((id, i, all) => id && all.indexOf(id) === i);
       if (!pick.length) {
@@ -271,12 +272,13 @@ export async function runCommand(command, rest, values) {
       const previous = JSON.parse(readFileSync(file, 'utf8'));
       const highRisk = new Set();
       for (const prdFile of projectPrds(paths.repoRoot, project.name)) {
-        for (const req of loadPrdIndex(prdFile, schemas).requirements) if (req.risk === 'high') highRisk.add(req.id);
+        const prd = loadPrdIndex(prdFile, schemas);
+        for (const req of prd.requirements) if (req.risk === 'high') highRisk.add(`${prd.prd_id}:${req.id}`);
       }
       const ids = (filter) => previous.filter(filter).map((r) => r.test_id).sort();
       const pick = [
         ids((r) => r.status === 'FAIL')[0],
-        ids((r) => r.status === 'PASS' && highRisk.has(loaded.cases.get(r.test_id)?.requirement))[0],
+        ids((r) => r.status === 'PASS' && highRisk.has(`${loaded.cases.get(r.test_id)?.prd_id}:${loaded.cases.get(r.test_id)?.requirement}`))[0],
         ids((r) => r.status === 'PASS')[0],
       ].filter((id, i, all) => id && all.indexOf(id) === i);
       const sink = evidenceSink(paths);

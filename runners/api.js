@@ -16,7 +16,9 @@ export function loadSurfaceTests(project, schemas, { surface, schemaId, dir, ext
   const problems = [];
   const cases = new Map();
   for (const file of listFiles(join(project.dir, 'cases'), /\.cases\.yaml$/)) {
-    for (const c of YAML.parse(readFileSync(file, 'utf8')).cases ?? []) cases.set(c.id, c);
+    const doc = YAML.parse(readFileSync(file, 'utf8'));
+    // Requirement IDs are only unique within a PRD, so each case keeps its PRD.
+    for (const c of doc.cases ?? []) cases.set(c.id, { ...c, prd_id: doc.prd_id });
   }
   const tests = [];
   for (const file of listFiles(join(project.dir, dir), /\.json$/)) {

@@ -114,3 +114,22 @@ test('field values are checked with toHaveValue, never text', () => {
   const spec = compileSpec([{ test_id: 'WEB-SHOP-06', oracle: 'AC-001.1', title: 'value', steps: [{ action: 'goto', path: '/' }, { action: 'expect_value', target: { label: 'Quantity for Notebook' }, value: '1' }] }], '/__reset');
   assert.ok(spec.includes('toHaveValue("1")'));
 });
+
+test('a test failing in one browser is FAIL even when it passes in the first', { timeout: 180000 }, async (t) => {
+  // WebKit on macOS skips buttons on Tab; Chromium reaches them. Without a
+  // declared skip, the WebKit failure must fail the whole test.
+  const keyboard = {
+    test_id: 'WEB-SHOP-07', oracle: 'AC-001.1', title: 'Tab reaches the add button',
+    steps: [
+      { action: 'goto', path: '/' },
+      { action: 'click', target: { label: 'Quantity for Notebook' } },
+      { action: 'press', key: 'Tab' },
+      { action: 'expect_focused', target: { role: 'button', name: 'Add Notebook to cart' } },
+    ],
+  };
+  const common = { repoRoot: REPO_ROOT, project, envName: 'dev', schemas, runId: 'RUN-2026-0925-001', label: 'main', browsers: ['chromium', 'webkit'] };
+  const strict = await runWebTests({ ...common, tests: [keyboard], sink: fileSink(t) });
+  assert.equal(strict.fail, 1);
+  const declared = await runWebTests({ ...common, tests: [{ ...keyboard, skip_browsers: [{ browser: 'webkit', reason: 'macOS default: Tab skips buttons in WebKit' }] }], sink: fileSink(t) });
+  assert.equal(declared.pass, 1);
+});

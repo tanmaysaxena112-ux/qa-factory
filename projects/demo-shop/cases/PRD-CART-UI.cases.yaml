@@ -1034,6 +1034,38 @@ cases:
       - Confirm the Cart section now shows "Your cart is empty."
       - 'Confirm the Total now reads "Total: $0.00".'
     source: edge_case_hunter
+  - id: WEB-CART-55
+    title: Breaking both the line limit and the stock limit shows the quantity message
+    requirement: REQ-006
+    criteria:
+      - EC-006.4
+    oracle:
+      criterion: EC-006.4
+      expected: Quantity must be a whole number from 1 to 10.
+    surface: web
+    technique: decision_table
+    preconditions:
+      - Cart is empty
+    steps:
+      - Enter 11 for Backpack (stock 3)
+      - Press Add Backpack to cart
+    source: qa_lead
+  - id: WEB-CART-56
+    title: Available stock is reduced by what is already in the cart
+    requirement: REQ-006
+    criteria:
+      - EC-006.5
+    oracle:
+      criterion: EC-006.5
+      expected: Not enough stock for that quantity.
+    surface: web
+    technique: state_transition
+    preconditions:
+      - Cart is empty
+    steps:
+      - Add 2 Backpacks
+      - Add 2 more Backpacks
+    source: qa_lead
 prd_id: PRD-CART-UI
 project: demo-shop
 schema: qa.cases.v1

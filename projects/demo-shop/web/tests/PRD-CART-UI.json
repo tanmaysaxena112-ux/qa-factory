@@ -1496,13 +1496,6 @@
           }
         },
         {
-          "action": "fill",
-          "target": {
-            "label": "Quantity for Notebook"
-          },
-          "value": "1"
-        },
-        {
           "action": "press",
           "key": "Tab"
         },
@@ -1520,15 +1513,33 @@
         {
           "action": "expect_visible",
           "target": {
-            "text": "Notebook × 1"
-          }
-        },
-        {
-          "action": "click",
-          "target": {
             "role": "button",
             "name": "Remove Notebook"
           }
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
+        },
+        {
+          "action": "press",
+          "key": "Tab"
         },
         {
           "action": "expect_focused",
@@ -1542,10 +1553,16 @@
           "key": "Enter"
         },
         {
-          "action": "expect_hidden",
+          "action": "expect_visible",
           "target": {
-            "text": "Notebook × 1"
+            "text": "Your cart is empty."
           }
+        }
+      ],
+      "skip_browsers": [
+        {
+          "browser": "webkit",
+          "reason": "EC-008.3: WebKit on macOS skips buttons on Tab by operating system default"
         }
       ]
     },
@@ -1841,6 +1858,102 @@
           "action": "expect_visible",
           "target": {
             "text": "Total: $0.00"
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-55",
+      "oracle": "EC-006.4",
+      "title": "Breaking both the line limit and the stock limit shows the quantity message",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "11"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Quantity must be a whole number from 1 to 10."
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Your cart is empty."
+          }
+        }
+      ]
+    },
+    {
+      "test_id": "WEB-CART-56",
+      "oracle": "EC-006.5",
+      "title": "Available stock is reduced by what is already in the cart",
+      "steps": [
+        {
+          "action": "goto",
+          "path": "/"
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "2"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Backpack × 2"
+          }
+        },
+        {
+          "action": "fill",
+          "target": {
+            "label": "Quantity for Backpack"
+          },
+          "value": "2"
+        },
+        {
+          "action": "click",
+          "target": {
+            "role": "button",
+            "name": "Add Backpack to cart"
+          }
+        },
+        {
+          "action": "expect_text",
+          "target": {
+            "role": "alert"
+          },
+          "value": "Not enough stock for that quantity."
+        },
+        {
+          "action": "expect_visible",
+          "target": {
+            "text": "Backpack × 2"
           }
         }
       ]
